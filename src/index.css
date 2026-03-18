@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Se você tiver estilos globais personalizados, coloque-os abaixo */
+body {
+  background-color: #f3f4f6;
+}
