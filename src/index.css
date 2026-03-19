@@ -4,3 +4,10 @@
 body {
   background-color: #f3f4f6;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+}

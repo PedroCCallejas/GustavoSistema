@@ -1,0 +1,41 @@
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  html,
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .printable-area {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: white !important;
+    overflow: hidden !important;
+  }
+
+  .avoid-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  svg,
+  img {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
