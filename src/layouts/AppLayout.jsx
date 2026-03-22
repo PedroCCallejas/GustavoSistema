@@ -6,7 +6,7 @@ export default function AppLayout() {
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between p-4">
           <Link to="/" className="font-semibold">
-            Projeto do Primo
+            Gustavo Miguel Monteiro de Andrade
           </Link>
 
           <nav className="flex gap-3 text-sm">

@@ -9,17 +9,18 @@ export default function HeaderFechamento({
   return (
     <div className="flex flex-col items-start justify-between gap-4 border-b-2 border-slate-800 pb-4 md:flex-row print:break-inside-avoid">
       <div className="flex w-full items-center gap-5">
-        {logo ? (
-          <img
-            src={logo}
-            className="h-24 w-auto object-contain"
-            alt="Logo"
-          />
-        ) : (
-          <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded border-2 border-dashed border-slate-300 bg-slate-100 text-center text-xs text-slate-400">
-            Sua Logo
-          </div>
-        )}
+        {logo && (
+            <div
+                className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden"
+                style={{ zIndex: 0 }}
+            >
+                <img
+                src={logo}
+                alt="Marca d'água"
+                className="w-[62%] max-w-[480px] object-contain opacity-[0.035]"
+                />
+            </div>
+            )}
 
         <div>
           <h1 className="text-2xl font-black uppercase leading-tight tracking-wide text-slate-900">

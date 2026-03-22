@@ -37,19 +37,19 @@ export default function FechamentoPage() {
   ]);
 
   const [payment, setPayment] = useState({
-    method: "pix",
-    status: "pendente",
-    discount: 0,
-    addition: 0,
-    pix: "(65) 996910049",
-    bank: "NUBANK",
-    agency: "0001",
-    cc: "64462938-4",
-    favorecido: "Gustavo Miguel Monteiro de Andrade",
-    cidade: "CUIABA",
-    txid: "***",
-    descricaoPix: "Fechamento de atendimento",
-  });
+  method: "pix",
+  status: "pendente",
+  discount: 0,
+  addition: 0,
+  pix: "+5565996910049",
+  bank: "NUBANK",
+  agency: "0001",
+  cc: "64462938-4",
+  favorecido: "Gustavo Miguel Monteiro de Andrade",
+  cidade: "CUIABA",
+  txid: "***",
+  descricaoPix: "Fechamento de atendimento",
+});
 
   const onPrint = useReactToPrint({
     contentRef: printRef,

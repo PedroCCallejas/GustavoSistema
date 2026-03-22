@@ -1,9 +1,6 @@
 import { formatCurrency } from "../../utils/format/currency";
 
 export default function TotaisCard({
-  subtotal = 0,
-  desconto = 0,
-  acrescimo = 0,
   total = 0,
 }) {
   return (
@@ -15,21 +12,8 @@ export default function TotaisCard({
       </div>
 
       <div className="space-y-3">
-        <div className="flex items-center justify-between text-sm text-slate-700">
-          <span>Subtotal</span>
-          <span className="font-medium">{formatCurrency(subtotal)}</span>
+        <div className="flex items-center justify-between text-sm text-slate-700">         
         </div>
-
-        <div className="flex items-center justify-between text-sm text-slate-700">
-          <span>Desconto</span>
-          <span className="font-medium">- {formatCurrency(desconto)}</span>
-        </div>
-
-        <div className="flex items-center justify-between text-sm text-slate-700">
-          <span>Acréscimo</span>
-          <span className="font-medium">+ {formatCurrency(acrescimo)}</span>
-        </div>
-
         <div className="border-t border-slate-200 pt-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
