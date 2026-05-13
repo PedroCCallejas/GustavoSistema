@@ -62,6 +62,21 @@ export default function FiltroFinanceiro({ filters, setFilters }) {
         </div>
 
         <div>
+        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Status
+        </label>
+        <select
+          value={filters.statusPagamento}
+          onChange={(e) => updateFilter("statusPagamento", e.target.value)}
+          className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+        >
+          <option value="todos">Todos</option>
+          <option value="pendente">Pendente</option>
+          <option value="pago">Pago</option>
+        </select>
+      </div>
+
+        <div>
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
             Período
           </label>

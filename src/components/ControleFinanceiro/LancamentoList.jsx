@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { FiTrash2, FiArrowUpRight, FiArrowDownRight } from "react-icons/fi";
+import {
+  FiTrash2,
+  FiArrowUpRight,
+  FiArrowDownRight,
+  FiEdit2,
+  FiSave,
+  FiX,
+} from "react-icons/fi";
 import { getDB } from "../../services/db";
 import { buildWhereClause } from "./financeiroFilters";
 
@@ -38,6 +45,14 @@ function getTipoStyle(tipo) {
 export default function LancamentoList({ refresh, filters }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    descricao: "",
+    valor: "",
+    forma_pagamento: "pix",
+    status_pagamento: "pendente",
+    data_lancamento: "",
+  });
 
   const load = useCallback(async () => {
     try {
@@ -76,6 +91,87 @@ export default function LancamentoList({ refresh, filters }) {
     }
   };
 
+  const iniciarEdicao = (item) => {
+    setEditingId(item.id);
+    setEditForm({
+      descricao: item.descricao || "",
+      valor: item.valor ?? "",
+      forma_pagamento: item.forma_pagamento || "pix",
+      status_pagamento: item.status_pagamento || "pendente",
+      data_lancamento: item.data_lancamento || "",
+    });
+  };
+
+  const cancelarEdicao = () => {
+    setEditingId(null);
+    setEditForm({
+      descricao: "",
+      valor: "",
+      forma_pagamento: "pix",
+      status_pagamento: "pendente",
+      data_lancamento: "",
+    });
+  };
+
+  const salvarEdicao = async (id) => {
+    try {
+      if (!editForm.descricao.trim()) {
+        alert("Informe a descrição.");
+        return;
+      }
+
+      if (!editForm.valor || Number(editForm.valor) <= 0) {
+        alert("Informe um valor válido.");
+        return;
+      }
+
+      if (!editForm.data_lancamento) {
+        alert("Informe a data.");
+        return;
+      }
+
+      const db = await getDB();
+
+      await db.execute(
+        `UPDATE lancamentos
+         SET descricao = ?, valor = ?, forma_pagamento = ?, status_pagamento = ?, data_lancamento = ?
+         WHERE id = ?`,
+        [
+          editForm.descricao.trim(),
+          Number(editForm.valor),
+          editForm.forma_pagamento,
+          editForm.status_pagamento,
+          editForm.data_lancamento,
+          id,
+        ]
+      );
+
+      cancelarEdicao();
+      await load();
+    } catch (error) {
+      console.error("Erro ao editar lançamento:", error);
+      alert("Não foi possível editar o lançamento.");
+    }
+  };
+
+  const alternarStatus = async (item) => {
+    try {
+      const db = await getDB();
+      const novoStatus =
+        item.status_pagamento === "pago" ? "pendente" : "pago";
+
+      await db.execute(
+        `UPDATE lancamentos SET status_pagamento = ? WHERE id = ?`,
+        [novoStatus, item.id]
+      );
+
+      await load();
+    } catch (error) {
+      console.error("Erro ao alterar status:", error);
+      alert("Não foi possível alterar o status.");
+    }
+  };
+
   return (
     <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4">
@@ -100,47 +196,186 @@ export default function LancamentoList({ refresh, filters }) {
         <div className="space-y-3">
           {data.map((item) => {
             const tipoStyle = getTipoStyle(item.tipo);
+            const isEditing = editingId === item.id;
 
             return (
               <div
                 key={item.id}
-                className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-slate-100 md:flex-row md:items-center md:justify-between"
+                className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-slate-100"
               >
-                <div className="flex items-start gap-3">
-                  <div className="mt-1">{tipoStyle.icon}</div>
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1">{tipoStyle.icon}</div>
 
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-slate-800">
-                        {item.descricao || "Sem descrição"}
-                      </p>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold text-slate-800">
+                          {item.descricao || "Sem descrição"}
+                        </p>
 
-                      <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${tipoStyle.badge}`}>
-                        {tipoStyle.label}
-                      </span>
+                        <span
+                          className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${tipoStyle.badge}`}
+                        >
+                          {tipoStyle.label}
+                        </span>
+                      </div>
+
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
+                        <span>{item.forma_pagamento || "-"}</span>
+                        <span>{formatDate(item.data_lancamento)}</span>
+
+                        <button
+                          onClick={() => alternarStatus(item)}
+                          className={`rounded-full px-2 py-0.5 text-xs font-semibold transition ${
+                            item.status_pagamento === "pago"
+                              ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                              : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                          }`}
+                        >
+                          {item.status_pagamento === "pago" ? "Pago" : "Pendente"}
+                        </button>
+                      </div>
                     </div>
+                  </div>
 
-                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-500">
-                      <span>{item.forma_pagamento || "-"}</span>
-                      <span>{formatDate(item.data_lancamento)}</span>
-                    </div>
+                  <div className="flex items-center justify-between gap-2 md:justify-end">
+                    <span className={`text-base font-bold ${tipoStyle.value}`}>
+                      {item.tipo === "saida" ? "- " : "+ "}
+                      {formatCurrency(item.valor)}
+                    </span>
+
+                    <button
+                      onClick={() => iniciarEdicao(item)}
+                      className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                    >
+                      <FiEdit2 size={16} />
+                      Editar
+                    </button>
+
+                    <button
+                      onClick={() => excluir(item.id)}
+                      className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-600"
+                    >
+                      <FiTrash2 size={16} />
+                      Excluir
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 md:justify-end">
-                  <span className={`text-base font-bold ${tipoStyle.value}`}>
-                    {item.tipo === "saida" ? "- " : "+ "}
-                    {formatCurrency(item.valor)}
-                  </span>
+                {isEditing && (
+                  <div className="mt-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-2 xl:grid-cols-5">
+                    <div className="xl:col-span-2">
+                      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Descrição
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.descricao}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            descricao: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                      />
+                    </div>
 
-                  <button
-                    onClick={() => excluir(item.id)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-600"
-                  >
-                    <FiTrash2 size={16} />
-                    Excluir
-                  </button>
-                </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Valor
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={editForm.valor}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            valor: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Data
+                      </label>
+                      <input
+                        type="date"
+                        value={editForm.data_lancamento}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            data_lancamento: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Forma
+                      </label>
+                      <select
+                        value={editForm.forma_pagamento}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            forma_pagamento: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                      >
+                        <option value="pix">Pix</option>
+                        <option value="dinheiro">Dinheiro</option>
+                        <option value="cartao">Cartão</option>
+                        <option value="transferencia">Transferência</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Status
+                      </label>
+                      <select
+                        value={editForm.status_pagamento}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            status_pagamento: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                      >
+                        <option value="pendente">Pendente</option>
+                        <option value="pago">Pago</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-end gap-2 xl:col-span-5">
+                      <button
+                        onClick={() => salvarEdicao(item.id)}
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                      >
+                        <FiSave size={16} />
+                        Salvar edição
+                      </button>
+
+                      <button
+                        onClick={cancelarEdicao}
+                        className="inline-flex items-center gap-2 rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-300"
+                      >
+                        <FiX size={16} />
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

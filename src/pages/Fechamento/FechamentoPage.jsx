@@ -3,6 +3,7 @@ import { useReactToPrint } from "react-to-print";
 import { FiUpload, FiPrinter } from "react-icons/fi";
 
 import logoPadrao from "../../assets/LogoGustavo.png";
+import { getDB } from "../../services/db";
 import { gerarPixCopiaECola } from "../../utils/pix/pixPayload";
 
 import HeaderFechamento from "../../components/fechamento/HeaderFechamento";
@@ -16,40 +17,46 @@ import "./fechamento.print.css";
 
 export default function FechamentoPage() {
   const printRef = useRef(null);
+  const salvandoPdfRef = useRef(false);
 
-  const [logo, setLogo] = useState(logoPadrao);
-
-  const [client, setClient] = useState({
+  const initialClient = {
     name: "",
     animal: "",
     ref: "",
     date: new Date().toLocaleDateString("pt-BR"),
-  });
+  };
 
-  const [relatorio, setRelatorio] = useState("");
-
-  const [materials, setMaterials] = useState([
+  const initialMaterials = [
     { id: 1, desc: "", qtd: 1, price: 0 },
-  ]);
+  ];
 
-  const [services, setServices] = useState([
+  const initialServices = [
     { id: 1, desc: "", date: "", price: 0 },
-  ]);
+  ];
 
-  const [payment, setPayment] = useState({
-  method: "pix",
-  status: "pendente",
-  discount: 0,
-  addition: 0,
-  pix: "+5565996910049",
-  bank: "NUBANK",
-  agency: "0001",
-  cc: "64462938-4",
-  favorecido: "Gustavo Miguel Monteiro de Andrade",
-  cidade: "CUIABA",
-  txid: "***",
-  descricaoPix: "Fechamento de atendimento",
-});
+  const initialPayment = {
+    method: "pix",
+    status: "pendente",
+    discount: 0,
+    addition: 0,
+    pix: "+5565996910049",
+    bank: "NUBANK",
+    agency: "0001",
+    cc: "64462938-4",
+    favorecido: "Gustavo Miguel Monteiro de Andrade",
+    cidade: "CUIABA",
+    txid: "***",
+    descricaoPix: "Fechamento de atendimento",
+  };
+
+  const [logo, setLogo] = useState(logoPadrao);
+  const [client, setClient] = useState(initialClient);
+  const [relatorio, setRelatorio] = useState("");
+  const [materials, setMaterials] = useState(initialMaterials);
+  const [services, setServices] = useState(initialServices);
+  const [payment, setPayment] = useState(initialPayment);
+  const [financeiroRegistrado, setFinanceiroRegistrado] = useState(false);
+  const [salvandoPdf, setSalvandoPdf] = useState(false);
 
   const onPrint = useReactToPrint({
     contentRef: printRef,
@@ -104,6 +111,71 @@ export default function FechamentoPage() {
     totalGeral,
   ]);
 
+  const getTodayISO = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const registrarFechamentoNoFinanceiro = async () => {
+    if (financeiroRegistrado || totalGeral <= 0) {
+      return;
+    }
+
+    const nomeCliente = client.name?.trim() || "Cliente";
+    const animal = client.animal?.trim();
+    const descricao = `Fechamento - ${nomeCliente}${animal ? ` / ${animal}` : ""}`;
+
+    const db = await getDB();
+
+    await db.execute(
+      `INSERT INTO lancamentos (tipo, descricao, valor, forma_pagamento, status_pagamento, data_lancamento)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        "entrada",
+        descricao,
+        Number(totalGeral),
+        payment.method || "pix",
+        "pendente",
+        getTodayISO(),
+      ]
+    );
+
+    setFinanceiroRegistrado(true);
+  };
+
+  const handleSalvarPdf = async () => {
+    if (salvandoPdfRef.current) return;
+
+    salvandoPdfRef.current = true;
+    setSalvandoPdf(true);
+
+    try {
+      if (!financeiroRegistrado && totalGeral > 0) {
+        try {
+          await registrarFechamentoNoFinanceiro();
+        } catch (error) {
+          console.error("Erro ao registrar fechamento no financeiro:", error);
+
+          const continuar = window.confirm(
+            "Nao foi possivel registrar o fechamento no financeiro. Deseja continuar gerando o PDF mesmo assim?"
+          );
+
+          if (!continuar) {
+            return;
+          }
+        }
+      }
+
+      await onPrint?.();
+    } finally {
+      salvandoPdfRef.current = false;
+      setSalvandoPdf(false);
+    }
+  };
+
   const handleLogo = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -111,6 +183,19 @@ export default function FechamentoPage() {
     const reader = new FileReader();
     reader.onloadend = () => setLogo(reader.result);
     reader.readAsDataURL(file);
+  };
+
+  const resetFechamento = () => {
+    setClient({
+      ...initialClient,
+      date: new Date().toLocaleDateString("pt-BR"),
+    });
+    setRelatorio("");
+    setMaterials([{ id: 1, desc: "", qtd: 1, price: 0 }]);
+    setServices([{ id: 1, desc: "", date: "", price: 0 }]);
+    setPayment(initialPayment);
+    setLogo(logoPadrao);
+    setFinanceiroRegistrado(false);
   };
 
   const updateMat = (id, key, value) => {
@@ -149,7 +234,6 @@ export default function FechamentoPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 pb-20 md:pb-10">
-      {/* Barra de controles */}
       <div className="no-print sticky top-0 z-50 mb-8 bg-slate-900 p-4 text-white shadow-lg">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 md:flex-row">
           <h1 className="flex items-center gap-2 text-xl font-bold">
@@ -171,17 +255,25 @@ export default function FechamentoPage() {
 
             <button
               type="button"
-              onClick={onPrint}
-              className="flex items-center gap-2 rounded bg-green-600 px-5 py-2 text-sm font-bold shadow-md transition hover:bg-green-500"
+              onClick={resetFechamento}
+              className="flex items-center gap-2 rounded cursor-pointer bg-red-600 px-5 py-2 text-sm font-bold shadow-md transition hover:bg-red-400"
+            >
+              Limpar Fechamento
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSalvarPdf}
+              disabled={salvandoPdf}
+              className="flex items-center gap-2 rounded cursor-pointer bg-green-600 px-5 py-2 text-sm font-bold shadow-md transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <FiPrinter />
-              SALVAR PDF
+              {salvandoPdf ? "GERANDO PDF..." : "SALVAR PDF"}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Área imprimível */}
       <div className="mx-auto max-w-5xl px-4">
         <div
           ref={printRef}

@@ -57,6 +57,11 @@ export function buildWhereClause(filters) {
     }
   }
 
+  if (filters.statusPagamento && filters.statusPagamento !== "todos") {
+  conditions.push("status_pagamento = ?");
+  params.push(filters.statusPagamento);
+}
+
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
   return { where, params };

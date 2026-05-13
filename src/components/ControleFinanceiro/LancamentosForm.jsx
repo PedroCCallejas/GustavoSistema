@@ -7,6 +7,7 @@ const initialForm = {
   descricao: "",
   valor: "",
   forma: "pix",
+  status: "pendente",
   data: new Date().toISOString().slice(0, 10),
 };
 
@@ -43,14 +44,15 @@ export default function LancamentoForm({ onSaved }) {
       const db = await getDB();
 
       await db.execute(
-        `INSERT INTO lancamentos (tipo, descricao, valor, forma_pagamento, data_lancamento)
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO lancamentos (tipo, descricao, valor, forma_pagamento, status_pagamento, data_lancamento)
+         VALUES (?, ?, ?, ?, ?, ?)`,
         [
-          form.tipo,
-          form.descricao.trim(),
-          Number(form.valor),
-          form.forma,
-          form.data,
+            form.tipo,
+            form.descricao.trim(),
+            Number(form.valor),
+            form.forma,
+            form.status,
+            form.data,
         ]
       );
 
@@ -93,6 +95,20 @@ export default function LancamentoForm({ onSaved }) {
             <option value="saida">Saída</option>
           </select>
         </div>
+
+        <div>
+        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Status
+        </label>
+        <select
+          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-500"
+          value={form.status}
+          onChange={(e) => handleChange("status", e.target.value)}
+        >
+          <option value="pendente">Pendente</option>
+          <option value="pago">Pago</option>
+        </select>
+      </div>
 
         <div className="xl:col-span-2">
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">

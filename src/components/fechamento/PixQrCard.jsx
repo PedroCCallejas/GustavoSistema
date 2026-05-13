@@ -8,6 +8,8 @@ export default function PixQrCard({
   beneficiario = "",
   valor = 0,
 }) {
+  const chavePix = chave || "+5565996910049";
+
   const handleCopy = async () => {
     if (!payload) return;
 
@@ -55,7 +57,7 @@ export default function PixQrCard({
             </p>
             <p>
               <span className="font-semibold text-slate-900">Chave Pix:</span>{" "}
-              <span className="break-all">{chave || "-"}</span>
+              <span className="break-all">{chavePix}</span>
             </p>
             <p>
               <span className="font-semibold text-slate-900">Valor:</span>{" "}
@@ -63,13 +65,24 @@ export default function PixQrCard({
             </p>
           </div>
 
-          <div className="mt-4">
-            <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-slate-400">
-              Pix copia e cola
-            </label>
+          <div className="mt-4 space-y-3">
+            <p className="text-xs leading-relaxed text-slate-500">
+              Escaneie o QR Code ou copie o codigo Pix abaixo no app do banco.
+            </p>
 
-            <div className="rounded-xl border border-slate-300 bg-slate-50 p-3 text-xs leading-relaxed text-slate-700 break-all print:bg-white">
-              {payload}
+            <div className="space-y-2 text-sm text-slate-700">
+              <p>
+                <span className="font-semibold text-slate-900">Chave Pix:</span>{" "}
+                <span className="break-all">{chavePix}</span>
+              </p>
+              <div>
+                <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                  Pix Copia e Cola:
+                </p>
+                <div className="select-text break-all rounded-xl border border-slate-300 bg-slate-50 p-3 font-mono text-xs leading-relaxed text-slate-700 print:bg-slate-50">
+                  {payload}
+                </div>
+              </div>
             </div>
 
             <button
