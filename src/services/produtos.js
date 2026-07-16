@@ -51,7 +51,7 @@ export async function deletarProduto(id) {
   if (error) throw error;
 }
 
-// Reposicao com custo medio ponderado (ler -> calcular -> gravar).
+// Reposicao com custo medio ponderado.
 export async function repor(id, quantidadeAdicionada, novoCusto) {
   const qtdAdd = Number(quantidadeAdicionada) || 0;
   const custoNovo = Number(novoCusto) || 0;
@@ -97,8 +97,6 @@ export async function baixarEstoque(id, quantidade) {
   if (e2) throw e2;
 }
 
-// Saida num fechamento: grava a movimentacao (custo medio + preco + vinculo)
-// e baixa a quantidade.
 export async function registrarSaidaFechamento({
   produtoId,
   quantidade,
@@ -135,7 +133,6 @@ export async function registrarSaidaFechamento({
   if (e3) throw e3;
 }
 
-// Ao excluir um fechamento: devolve as quantidades e apaga as movimentacoes.
 export async function estornarFechamento(lancamentoId) {
   if (!lancamentoId) return;
 
@@ -171,4 +168,7 @@ export async function listarMovimentacoes() {
   const { data, error } = await supabase
     .from("movimentacoes_estoque")
     .select("*, produtos(nome)")
-    .ord
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((m) => ({ ...m, produto_nome: m.produtos?.nome ?? null }));
+}

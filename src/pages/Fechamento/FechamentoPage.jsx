@@ -27,13 +27,9 @@ export default function FechamentoPage() {
     date: new Date().toLocaleDateString("pt-BR"),
   };
 
-  const initialMaterials = [
-    { id: 1, desc: "", qtd: 1, price: 0 },
-  ];
+  const initialMaterials = [{ id: 1, desc: "", qtd: 1, price: 0 }];
 
-  const initialServices = [
-    { id: 1, desc: "", date: "", price: 0 },
-  ];
+  const initialServices = [{ id: 1, desc: "", date: "", price: 0 }];
 
   const initialPayment = {
     method: "pix",
@@ -231,10 +227,7 @@ export default function FechamentoPage() {
   };
 
   const addMat = () => {
-    setMaterials((prev) => [
-      ...prev,
-      { id: Date.now(), desc: "", qtd: 1, price: 0 },
-    ]);
+    setMaterials((prev) => [...prev, { id: Date.now(), desc: "", qtd: 1, price: 0 }]);
   };
 
   const delMat = (id) => {
@@ -248,10 +241,7 @@ export default function FechamentoPage() {
   };
 
   const addSrv = () => {
-    setServices((prev) => [
-      ...prev,
-      { id: Date.now(), desc: "", date: "", price: 0 },
-    ]);
+    setServices((prev) => [...prev, { id: Date.now(), desc: "", date: "", price: 0 }]);
   };
 
   const delSrv = (id) => {
@@ -365,3 +355,20 @@ export default function FechamentoPage() {
               <TotaisCard
                 subtotal={subtotal}
                 desconto={desconto}
+                acrescimo={acrescimo}
+                total={totalGeral}
+              />
+            </div>
+
+            <PagamentoSection
+              payment={payment}
+              setPayment={setPayment}
+              pixPayload={pixPayload}
+              totalGeral={totalGeral}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
