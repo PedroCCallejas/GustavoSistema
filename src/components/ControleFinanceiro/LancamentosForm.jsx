@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FiDollarSign, FiCalendar, FiFileText, FiSave } from "react-icons/fi";
-import { getDB } from "../../services/db";
+import { criarLancamento } from "../../services/lancamentos";
 
 const initialForm = {
   tipo: "entrada",
@@ -41,20 +41,14 @@ export default function LancamentoForm({ onSaved }) {
 
       setLoading(true);
 
-      const db = await getDB();
-
-      await db.execute(
-        `INSERT INTO lancamentos (tipo, descricao, valor, forma_pagamento, status_pagamento, data_lancamento)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-            form.tipo,
-            form.descricao.trim(),
-            Number(form.valor),
-            form.forma,
-            form.status,
-            form.data,
-        ]
-      );
+      await criarLancamento({
+        tipo: form.tipo,
+        descricao: form.descricao.trim(),
+        valor: Number(form.valor),
+        forma_pagamento: form.forma,
+        status_pagamento: form.status,
+        data_lancamento: form.data,
+      });
 
       setForm(initialForm);
       onSaved?.();

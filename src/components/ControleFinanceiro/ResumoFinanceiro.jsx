@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { FiArrowUpRight, FiArrowDownRight, FiDollarSign } from "react-icons/fi";
-import { getDB } from "../../services/db";
-import { buildWhereClause } from "./financeiroFilters";
+import { resumoLancamentos } from "../../services/lancamentos";
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -17,21 +16,9 @@ export default function ResumoFinanceiro({ refresh, filters }) {
   useEffect(() => {
     async function loadResumo() {
       try {
-        const db = await getDB();
-        const { where, params } = buildWhereClause(filters);
-
-        const entradas = await db.select(
-          `SELECT SUM(valor) as total FROM lancamentos ${where} ${where ? "AND" : "WHERE"} tipo = ?`,
-          [...params, "entrada"]
-        );
-
-        const saidas = await db.select(
-          `SELECT SUM(valor) as total FROM lancamentos ${where} ${where ? "AND" : "WHERE"} tipo = ?`,
-          [...params, "saida"]
-        );
-
-        setEntrada(Number(entradas[0]?.total || 0));
-        setSaida(Number(saidas[0]?.total || 0));
+        const { entrada, saida } = await resumoLancamentos(filters);
+        setEntrada(entrada);
+        setSaida(saida);
       } catch (error) {
         console.error("Erro ao carregar resumo:", error);
       }

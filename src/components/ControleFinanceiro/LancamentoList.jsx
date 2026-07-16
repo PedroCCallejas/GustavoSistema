@@ -7,9 +7,12 @@ import {
   FiSave,
   FiX,
 } from "react-icons/fi";
-import { getDB } from "../../services/db";
-import { buildWhereClause } from "./financeiroFilters";
-import { estornarFechamento } from "../../services/produtos";
+import {
+  listarLancamentos,
+  atualizarLancamento,
+  alternarStatusLancamento,
+  excluirLancamento,
+} from "../../services/lancamentos";
 import { confirmar } from "../../utils/dialogs";
 
 function formatCurrency(value) {
@@ -59,14 +62,7 @@ export default function LancamentoList({ refresh, filters }) {
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const db = await getDB();
-      const { where, params } = buildWhereClause(filters);
-
-      const result = await db.select(
-        `SELECT * FROM lancamentos ${where} ORDER BY data_lancamento DESC, id DESC`,
-        params
-      );
-
+      const result = await listarLancamentos(filters);
       setData(result);
     } catch (error) {
       console.error("Erro ao carregar lançamentos:", error);
@@ -86,9 +82,7 @@ export default function LancamentoList({ refresh, filters }) {
     if (!ok) return;
 
     try {
-      const db = await getDB();
-      await estornarFechamento(id);
-      await db.execute("DELETE FROM lancamentos WHERE id = ?", [id]);
+      await excluirLancamento(id);
       await load();
     } catch (error) {
       console.error("Erro ao excluir lançamento:", error);
@@ -135,21 +129,13 @@ export default function LancamentoList({ refresh, filters }) {
         return;
       }
 
-      const db = await getDB();
-
-      await db.execute(
-        `UPDATE lancamentos
-         SET descricao = ?, valor = ?, forma_pagamento = ?, status_pagamento = ?, data_lancamento = ?
-         WHERE id = ?`,
-        [
-          editForm.descricao.trim(),
-          Number(editForm.valor),
-          editForm.forma_pagamento,
-          editForm.status_pagamento,
-          editForm.data_lancamento,
-          id,
-        ]
-      );
+      await atualizarLancamento(id, {
+        descricao: editForm.descricao.trim(),
+        valor: Number(editForm.valor),
+        forma_pagamento: editForm.forma_pagamento,
+        status_pagamento: editForm.status_pagamento,
+        data_lancamento: editForm.data_lancamento,
+      });
 
       cancelarEdicao();
       await load();
@@ -161,15 +147,7 @@ export default function LancamentoList({ refresh, filters }) {
 
   const alternarStatus = async (item) => {
     try {
-      const db = await getDB();
-      const novoStatus =
-        item.status_pagamento === "pago" ? "pendente" : "pago";
-
-      await db.execute(
-        `UPDATE lancamentos SET status_pagamento = ? WHERE id = ?`,
-        [novoStatus, item.id]
-      );
-
+      await alternarStatusLancamento(item.id, item.status_pagamento);
       await load();
     } catch (error) {
       console.error("Erro ao alterar status:", error);

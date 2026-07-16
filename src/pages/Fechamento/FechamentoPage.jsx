@@ -3,9 +3,9 @@ import { useReactToPrint } from "react-to-print";
 import { FiUpload, FiPrinter } from "react-icons/fi";
 
 import logoPadrao from "../../assets/LogoGustavo.png";
-import { getDB } from "../../services/db";
 import { gerarPixCopiaECola } from "../../utils/pix/pixPayload";
 import { listarProdutos, registrarSaidaFechamento } from "../../services/produtos";
+import { criarLancamento } from "../../services/lancamentos";
 
 import HeaderFechamento from "../../components/fechamento/HeaderFechamento";
 import ClienteSection from "../../components/fechamento/ClienteSection";
@@ -141,22 +141,14 @@ export default function FechamentoPage() {
     const animal = client.animal?.trim();
     const descricao = `Fechamento - ${nomeCliente}${animal ? ` / ${animal}` : ""}`;
 
-    const db = await getDB();
-
-    const resultadoLancamento = await db.execute(
-      `INSERT INTO lancamentos (tipo, descricao, valor, forma_pagamento, status_pagamento, data_lancamento)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        "entrada",
-        descricao,
-        Number(totalGeral),
-        payment.method || "pix",
-        "pendente",
-        getTodayISO(),
-      ]
-    );
-
-    const lancamentoId = resultadoLancamento?.lastInsertId ?? null;
+    const lancamentoId = await criarLancamento({
+      tipo: "entrada",
+      descricao,
+      valor: Number(totalGeral),
+      forma_pagamento: payment.method || "pix",
+      status_pagamento: "pendente",
+      data_lancamento: getTodayISO(),
+    });
 
     for (const item of materials) {
       if (item.produtoId) {

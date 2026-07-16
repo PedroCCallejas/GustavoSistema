@@ -4,6 +4,7 @@ import FinanceiroPage from "../pages/financeiro/FinanceiroPage";
 import FechamentoPage from "../pages/Fechamento/FechamentoPage";
 import EstoquePage from "../pages/estoque/EstoquePage";
 import DashboardPage from "../pages/dashboard/DashboardPage";
+import MigracaoPage from "../pages/migracao/MigracaoPage";
 
 export const routes = [
   {
@@ -14,6 +15,7 @@ export const routes = [
       { path: "/financeiro", element: <FinanceiroPage /> },
       { path: "/estoque", element: <EstoquePage /> },
       { path: "/dashboard", element: <DashboardPage /> },
+      { path: "/migracao", element: <MigracaoPage /> },
     ],
   },
 ];

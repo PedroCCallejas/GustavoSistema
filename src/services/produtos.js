@@ -1,82 +1,85 @@
-import { getDB } from "./db";
+import { supabase } from "./supabase";
 
 export async function listarProdutos() {
-  const db = await getDB();
-  return db.select(`SELECT * FROM produtos ORDER BY nome ASC`);
+  const { data, error } = await supabase
+    .from("produtos")
+    .select("*")
+    .order("nome", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function criarProduto({ nome, quantidade = 0, unidade = "un", custoAtual = 0 }) {
-  const db = await getDB();
   const c = Number(custoAtual) || 0;
-  await db.execute(
-    `INSERT INTO produtos (nome, quantidade, unidade, custo_anterior, custo_atual, custo_medio)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [nome, Number(quantidade), unidade, c, c, c]
-  );
+  const { error } = await supabase.from("produtos").insert({
+    nome,
+    quantidade: Number(quantidade) || 0,
+    unidade,
+    custo_anterior: c,
+    custo_atual: c,
+    custo_medio: c,
+  });
+  if (error) throw error;
 }
 
 export async function atualizarProduto(id, { nome, unidade }) {
-  const db = await getDB();
-  await db.execute(
-    `UPDATE produtos SET nome = ?, unidade = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?`,
-    [nome, unidade, id]
-  );
+  const { error } = await supabase.from("produtos").update({ nome, unidade }).eq("id", id);
+  if (error) throw error;
 }
 
 export async function deletarProduto(id) {
-  const db = await getDB();
-  await db.execute(`DELETE FROM produtos WHERE id = ?`, [id]);
+  const { error } = await supabase.from("produtos").delete().eq("id", id);
+  if (error) throw error;
 }
 
-// Reposicao:
-// - custo_atual  = ultimo preco de compra (o que ele acabou de pagar)
-// - custo_anterior = preco de compra anterior (para o alerta de aumento)
-// - custo_medio  = media ponderada, usada para custear as vendas
+// Reposicao com custo medio ponderado (ler -> calcular -> gravar).
 export async function repor(id, quantidadeAdicionada, novoCusto) {
   const qtdAdd = Number(quantidadeAdicionada) || 0;
   const custoNovo = Number(novoCusto) || 0;
-  const db = await getDB();
 
-  const rows = await db.select(
-    `SELECT quantidade, custo_atual, custo_medio FROM produtos WHERE id = ?`,
-    [id]
-  );
-  const atual = rows && rows[0] ? rows[0] : { quantidade: 0, custo_atual: 0, custo_medio: 0 };
-  const qtdAtual = Math.max(Number(atual.quantidade) || 0, 0);
-  const medioAtual = Number(atual.custo_medio) || 0;
+  const { data: prod, error: e1 } = await supabase
+    .from("produtos")
+    .select("quantidade, custo_atual, custo_medio")
+    .eq("id", id)
+    .single();
+  if (e1) throw e1;
 
+  const qtdAtual = Math.max(Number(prod.quantidade) || 0, 0);
+  const medioAtual = Number(prod.custo_medio) || 0;
   const baseQtd = qtdAtual + qtdAdd;
   const novoMedio =
     baseQtd > 0 ? (qtdAtual * medioAtual + qtdAdd * custoNovo) / baseQtd : custoNovo;
 
-  await db.execute(
-    `UPDATE produtos
-     SET custo_anterior = custo_atual,
-         custo_atual = ?,
-         custo_medio = ?,
-         quantidade = quantidade + ?,
-         atualizado_em = CURRENT_TIMESTAMP
-     WHERE id = ?`,
-    [custoNovo, novoMedio, qtdAdd, id]
-  );
+  const { error: e2 } = await supabase
+    .from("produtos")
+    .update({
+      custo_anterior: Number(prod.custo_atual) || 0,
+      custo_atual: custoNovo,
+      custo_medio: novoMedio,
+      quantidade: (Number(prod.quantidade) || 0) + qtdAdd,
+    })
+    .eq("id", id);
+  if (e2) throw e2;
 }
 
-// Baixa simples de estoque (mantida por compatibilidade).
 export async function baixarEstoque(id, quantidade) {
   const qtd = Number(quantidade) || 0;
   if (!id || qtd <= 0) return;
-  const db = await getDB();
-  await db.execute(
-    `UPDATE produtos
-     SET quantidade = quantidade - ?,
-         atualizado_em = CURRENT_TIMESTAMP
-     WHERE id = ?`,
-    [qtd, id]
-  );
+  const { data: prod, error: e1 } = await supabase
+    .from("produtos")
+    .select("quantidade")
+    .eq("id", id)
+    .single();
+  if (e1) throw e1;
+  const { error: e2 } = await supabase
+    .from("produtos")
+    .update({ quantidade: (Number(prod.quantidade) || 0) - qtd })
+    .eq("id", id);
+  if (e2) throw e2;
 }
 
-// Saida de um produto num fechamento: grava a movimentacao (custo medio do
-// momento + preco cobrado + vinculo com o lancamento) e baixa a quantidade.
+// Saida num fechamento: grava a movimentacao (custo medio + preco + vinculo)
+// e baixa a quantidade.
 export async function registrarSaidaFechamento({
   produtoId,
   quantidade,
@@ -85,64 +88,71 @@ export async function registrarSaidaFechamento({
 }) {
   const qtd = Number(quantidade) || 0;
   if (!produtoId || qtd <= 0) return;
-  const db = await getDB();
 
-  const rows = await db.select(
-    `SELECT custo_medio FROM produtos WHERE id = ?`,
-    [produtoId]
-  );
-  const custoUnit = rows && rows[0] ? Number(rows[0].custo_medio) || 0 : 0;
+  const { data: prod, error: e1 } = await supabase
+    .from("produtos")
+    .select("quantidade, custo_medio")
+    .eq("id", produtoId)
+    .single();
+  if (e1) throw e1;
 
+  const custoUnit = Number(prod.custo_medio) || 0;
   const hoje = new Date().toISOString().slice(0, 10);
 
-  await db.execute(
-    `INSERT INTO movimentacoes_estoque (produto_id, quantidade, custo_unit, preco_unit, data, lancamento_id)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [produtoId, qtd, custoUnit, Number(precoUnit) || 0, hoje, lancamentoId]
-  );
+  const { error: e2 } = await supabase.from("movimentacoes_estoque").insert({
+    produto_id: produtoId,
+    quantidade: qtd,
+    custo_unit: custoUnit,
+    preco_unit: Number(precoUnit) || 0,
+    data: hoje,
+    lancamento_id: lancamentoId,
+  });
+  if (e2) throw e2;
 
-  await db.execute(
-    `UPDATE produtos
-     SET quantidade = quantidade - ?,
-         atualizado_em = CURRENT_TIMESTAMP
-     WHERE id = ?`,
-    [qtd, produtoId]
-  );
+  const { error: e3 } = await supabase
+    .from("produtos")
+    .update({ quantidade: (Number(prod.quantidade) || 0) - qtd })
+    .eq("id", produtoId);
+  if (e3) throw e3;
 }
 
-// Ao excluir um fechamento (lancamento): devolve as quantidades ao estoque
-// e remove as movimentacoes (saem da contagem de receita/custo do dashboard).
+// Ao excluir um fechamento: devolve as quantidades e apaga as movimentacoes.
 export async function estornarFechamento(lancamentoId) {
   if (!lancamentoId) return;
-  const db = await getDB();
 
-  const movs = await db.select(
-    `SELECT produto_id, quantidade FROM movimentacoes_estoque WHERE lancamento_id = ?`,
-    [lancamentoId]
-  );
+  const { data: movs, error: e1 } = await supabase
+    .from("movimentacoes_estoque")
+    .select("produto_id, quantidade")
+    .eq("lancamento_id", lancamentoId);
+  if (e1) throw e1;
 
-  for (const m of movs) {
-    await db.execute(
-      `UPDATE produtos
-       SET quantidade = quantidade + ?,
-           atualizado_em = CURRENT_TIMESTAMP
-       WHERE id = ?`,
-      [Number(m.quantidade) || 0, m.produto_id]
-    );
+  for (const m of movs ?? []) {
+    if (!m.produto_id) continue;
+    const { data: prod, error: e2 } = await supabase
+      .from("produtos")
+      .select("quantidade")
+      .eq("id", m.produto_id)
+      .single();
+    if (e2) throw e2;
+    const { error: e3 } = await supabase
+      .from("produtos")
+      .update({ quantidade: (Number(prod.quantidade) || 0) + (Number(m.quantidade) || 0) })
+      .eq("id", m.produto_id);
+    if (e3) throw e3;
   }
 
-  await db.execute(
-    `DELETE FROM movimentacoes_estoque WHERE lancamento_id = ?`,
-    [lancamentoId]
-  );
+  const { error: e4 } = await supabase
+    .from("movimentacoes_estoque")
+    .delete()
+    .eq("lancamento_id", lancamentoId);
+  if (e4) throw e4;
 }
 
 export async function listarMovimentacoes() {
-  const db = await getDB();
-  return db.select(`
-    SELECT m.*, p.nome AS produto_nome
-    FROM movimentacoes_estoque m
-    LEFT JOIN produtos p ON p.id = m.produto_id
-    ORDER BY m.id DESC
-  `);
+  const { data, error } = await supabase
+    .from("movimentacoes_estoque")
+    .select("*, produtos(nome)")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((m) => ({ ...m, produto_nome: m.produtos?.nome ?? null }));
 }

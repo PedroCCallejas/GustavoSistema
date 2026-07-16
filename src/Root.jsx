@@ -1,16 +1,30 @@
-import { useEffect } from "react";
 import { BrowserRouter } from "react-router-dom";
 import AppRouter from "./app/AppRouter";
-import { initDatabase } from "./services/initDB";
+import { AuthProvider, useAuth } from "./auth/AuthContext";
+import LoginPage from "./pages/Login/LoginPage";
 
-export default function Root() {
-  useEffect(() => {
-    initDatabase();
-  }, []);
+function Gate() {
+  const { session, carregando } = useAuth();
+
+  if (carregando) {
+    return <div className="p-6 text-slate-500">Carregando...</div>;
+  }
+
+  if (!session) {
+    return <LoginPage />;
+  }
 
   return (
     <BrowserRouter>
       <AppRouter />
     </BrowserRouter>
+  );
+}
+
+export default function Root() {
+  return (
+    <AuthProvider>
+      <Gate />
+    </AuthProvider>
   );
 }
