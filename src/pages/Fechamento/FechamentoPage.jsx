@@ -4,8 +4,8 @@ import { FiUpload, FiPrinter } from "react-icons/fi";
 
 import logoPadrao from "../../assets/LogoGustavo.png";
 import { gerarPixCopiaECola } from "../../utils/pix/pixPayload";
-import { listarProdutos, registrarSaidaFechamento } from "../../services/produtos";
-import { criarLancamento } from "../../services/lancamentos";
+import { listarProdutos } from "../../services/produtos";
+import { processarFechamento } from "../../services/filaOffline";
 
 import HeaderFechamento from "../../components/fechamento/HeaderFechamento";
 import ClienteSection from "../../components/fechamento/ClienteSection";
@@ -59,6 +59,7 @@ export default function FechamentoPage() {
   const [financeiroRegistrado, setFinanceiroRegistrado] = useState(false);
   const [salvandoPdf, setSalvandoPdf] = useState(false);
   const [produtos, setProdutos] = useState([]);
+  const [salvoOffline, setSalvoOffline] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -141,31 +142,26 @@ export default function FechamentoPage() {
     const animal = client.animal?.trim();
     const descricao = `Fechamento - ${nomeCliente}${animal ? ` / ${animal}` : ""}`;
 
-    const lancamentoId = await criarLancamento({
+    const itens = materials
+      .filter((item) => item.produtoId)
+      .map((item) => ({
+        produtoId: item.produtoId,
+        quantidade: Number(item.qtd) || 0,
+        precoUnit: Number(item.price) || 0,
+      }));
+
+    const lancamento = {
       tipo: "entrada",
       descricao,
       valor: Number(totalGeral),
       forma_pagamento: payment.method || "pix",
       status_pagamento: "pendente",
       data_lancamento: getTodayISO(),
-    });
+    };
 
-    for (const item of materials) {
-      if (item.produtoId) {
-        try {
-          await registrarSaidaFechamento({
-            produtoId: item.produtoId,
-            quantidade: Number(item.qtd) || 0,
-            precoUnit: Number(item.price) || 0,
-            lancamentoId,
-          });
-        } catch (error) {
-          console.error("Erro ao baixar estoque:", item.produtoId, error);
-        }
-      }
-    }
-
+    const resultado = await processarFechamento({ lancamento, itens });
     setFinanceiroRegistrado(true);
+    setSalvoOffline(resultado.modo === "offline");
   };
 
   const handleSalvarPdf = async () => {
@@ -218,6 +214,7 @@ export default function FechamentoPage() {
     setPayment(initialPayment);
     setLogo(logoPadrao);
     setFinanceiroRegistrado(false);
+    setSalvoOffline(false);
   };
 
   const updateMat = (id, key, value) => {
@@ -304,6 +301,11 @@ export default function FechamentoPage() {
       </div>
 
       <div className="mx-auto max-w-5xl px-4">
+        {salvoOffline && (
+          <div className="no-print mb-4 rounded-lg bg-amber-100 p-3 text-sm text-amber-800">
+            Fechamento salvo no aparelho. Será enviado automaticamente quando houver internet.
+          </div>
+        )}
         <div
           ref={printRef}
           className="printable-area relative rounded-2xl border border-slate-200 bg-white p-6 shadow"
@@ -363,20 +365,3 @@ export default function FechamentoPage() {
               <TotaisCard
                 subtotal={subtotal}
                 desconto={desconto}
-                acrescimo={acrescimo}
-                total={totalGeral}
-              />
-            </div>
-
-            <PagamentoSection
-              payment={payment}
-              setPayment={setPayment}
-              pixPayload={pixPayload}
-              totalGeral={totalGeral}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}

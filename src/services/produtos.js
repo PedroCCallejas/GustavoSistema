@@ -1,12 +1,31 @@
 import { supabase } from "./supabase";
 
+const CACHE_PRODUTOS = "cache_produtos";
+
 export async function listarProdutos() {
-  const { data, error } = await supabase
-    .from("produtos")
-    .select("*")
-    .order("nome", { ascending: true });
-  if (error) throw error;
-  return data ?? [];
+  try {
+    const { data, error } = await supabase
+      .from("produtos")
+      .select("*")
+      .order("nome", { ascending: true });
+    if (error) throw error;
+    const lista = data ?? [];
+    try {
+      localStorage.setItem(CACHE_PRODUTOS, JSON.stringify(lista));
+    } catch {
+      // ignora falha ao gravar cache
+    }
+    return lista;
+  } catch (erro) {
+    // offline: usa o ultimo cache salvo, se houver
+    try {
+      const cache = JSON.parse(localStorage.getItem(CACHE_PRODUTOS) || "[]");
+      if (Array.isArray(cache) && cache.length) return cache;
+    } catch {
+      // ignora
+    }
+    throw erro;
+  }
 }
 
 export async function criarProduto({ nome, quantidade = 0, unidade = "un", custoAtual = 0 }) {
@@ -152,7 +171,4 @@ export async function listarMovimentacoes() {
   const { data, error } = await supabase
     .from("movimentacoes_estoque")
     .select("*, produtos(nome)")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map((m) => ({ ...m, produto_nome: m.produtos?.nome ?? null }));
-}
+    .ord

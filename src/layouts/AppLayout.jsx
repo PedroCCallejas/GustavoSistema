@@ -1,6 +1,7 @@
 import { Link, Outlet } from "react-router-dom";
 import { FiLogOut } from "react-icons/fi";
 import { useAuth } from "../auth/AuthContext";
+import BarraPendentes from "../components/BarraPendentes";
 
 export default function AppLayout() {
   const { sair } = useAuth();
@@ -40,9 +41,7 @@ export default function AppLayout() {
         </div>
       </header>
 
+      <BarraPendentes />
+
       <main className="mx-auto max-w-5xl p-4">
-        <Outlet />
-      </main>
-    </div>
-  );
-}
+        
