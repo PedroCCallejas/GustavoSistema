@@ -252,12 +252,9 @@ export default function FechamentoPage() {
     <div className="min-h-screen bg-slate-100 pb-20 md:pb-10">
       <div className="no-print sticky top-0 z-50 mb-8 bg-slate-900 p-4 text-white shadow-lg">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 md:flex-row">
-          <h1 className="flex items-center gap-2 text-xl font-bold">
-            Gerador de Fechamento
-            <span className="rounded bg-blue-600 px-2 py-0.5 text-xs">Vite</span>
-          </h1>
+          <h1 className="text-xl font-bold">Gerador de Fechamento</h1>
 
-          <div className="flex flex-wrap justify-center gap-2">
+          <div className="flex w-full flex-wrap justify-center gap-2 md:w-auto">
             <label className="flex cursor-pointer items-center gap-2 rounded bg-slate-700 px-3 py-2 text-sm font-medium transition hover:bg-slate-600">
               <FiUpload />
               {logo ? "Trocar logo" : "Adicionar logo"}

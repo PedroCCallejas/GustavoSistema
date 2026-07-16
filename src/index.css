@@ -1,6 +1,12 @@
 @import "tailwindcss";
 
-/* Se você tiver estilos globais personalizados, coloque-os abaixo */
+/* Estilos globais */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   background-color: #f3f4f6;
 }
@@ -9,5 +15,10 @@ body {
   @page {
     size: A4;
     margin: 10mm;
+  }
+
+  html,
+  body {
+    overflow-x: visible;
   }
 }
