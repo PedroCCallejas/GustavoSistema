@@ -2,6 +2,8 @@ import AppLayout from "../layouts/AppLayout";
 import Home from "../pages/Home";
 import FinanceiroPage from "../pages/financeiro/FinanceiroPage";
 import FechamentoPage from "../pages/Fechamento/FechamentoPage";
+import EstoquePage from "../pages/estoque/EstoquePage";
+import DashboardPage from "../pages/dashboard/DashboardPage";
 
 export const routes = [
   {
@@ -10,6 +12,8 @@ export const routes = [
       { path: "/", element: <Home /> },
       { path: "/fechamento", element: <FechamentoPage /> },
       { path: "/financeiro", element: <FinanceiroPage /> },
+      { path: "/estoque", element: <EstoquePage /> },
+      { path: "/dashboard", element: <DashboardPage /> },
     ],
   },
 ];

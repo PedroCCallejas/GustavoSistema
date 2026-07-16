@@ -7,6 +7,7 @@ export default function ItensTable({
   onRemove,
   onUpdate,
   subtotalValue = "",
+  produtos = [],
 }) {
   const isMateriais = tipo === "materiais";
 
@@ -22,7 +23,7 @@ export default function ItensTable({
           key: "desc",
           label: "Descrição",
           type: "textarea",
-          headerClassName: "pb-3 w-8/12 font-medium pl-2",
+          headerClassName: "pb-3 w-6/12 font-medium pl-2",
           cellClassName: "py-2 pr-2 pl-2 align-top",
           placeholder: "Item...",
         },
@@ -42,6 +43,19 @@ export default function ItensTable({
           cellClassName:
             "py-2 align-top text-right font-mono text-slate-900 pr-2",
           inputClassName: "w-full bg-transparent text-right outline-none",
+        },
+        {
+          key: "produtoId",
+          label: "Estoque",
+          type: "select",
+          printHidden: true,
+          options: produtos.map((p) => ({
+            value: String(p.id),
+            label: p.nome,
+          })),
+          headerClassName: "pb-3 text-center w-2/12 font-medium",
+          cellClassName: "py-2 align-top text-center",
+          placeholder: "— nenhum —",
         },
       ]
     : [

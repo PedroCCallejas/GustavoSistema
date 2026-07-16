@@ -9,6 +9,8 @@ import {
 } from "react-icons/fi";
 import { getDB } from "../../services/db";
 import { buildWhereClause } from "./financeiroFilters";
+import { estornarFechamento } from "../../services/produtos";
+import { confirmar } from "../../utils/dialogs";
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -78,11 +80,14 @@ export default function LancamentoList({ refresh, filters }) {
   }, [load, refresh]);
 
   const excluir = async (id) => {
-    const confirmar = window.confirm("Tem certeza que deseja excluir este lançamento?");
-    if (!confirmar) return;
+    const ok = await confirmar(
+      "Tem certeza que deseja excluir este lançamento? As unidades usadas voltarão ao estoque."
+    );
+    if (!ok) return;
 
     try {
       const db = await getDB();
+      await estornarFechamento(id);
       await db.execute("DELETE FROM lancamentos WHERE id = ?", [id]);
       await load();
     } catch (error) {

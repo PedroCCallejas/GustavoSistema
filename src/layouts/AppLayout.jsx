@@ -16,6 +16,12 @@ export default function AppLayout() {
             <Link className="hover:underline" to="/financeiro">
               Financeiro
             </Link>
+            <Link className="hover:underline" to="/estoque">
+              Estoque
+            </Link>
+            <Link className="hover:underline" to="/dashboard">
+              Dashboard
+            </Link>
           </nav>
         </div>
       </header>

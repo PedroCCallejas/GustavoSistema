@@ -37,7 +37,7 @@ export default function EditableTable({
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={column.headerClassName || "px-2 py-3 font-semibold"}
+                  className={`${column.headerClassName || "px-2 py-3 font-semibold"}${column.printHidden ? " print:hidden" : ""}`}
                 >
                   {column.label}
                 </th>
@@ -54,7 +54,7 @@ export default function EditableTable({
                 {columns.map((column, index) => (
                   <td
                     key={column.key}
-                    className={column.cellClassName || "px-2 py-2 align-top"}
+                    className={`${column.cellClassName || "px-2 py-2 align-top"}${column.printHidden ? " print:hidden" : ""}`}
                   >
                     <div className="relative">
                       {column.type === "textarea" && (
@@ -68,7 +68,24 @@ export default function EditableTable({
                         />
                       )}
 
-                      {column.type !== "textarea" && (
+                      {column.type === "select" && (
+                        <select
+                          value={row[column.key] ?? ""}
+                          onChange={(e) =>
+                            onUpdate(row.id, column.key, e.target.value)
+                          }
+                          className={`w-full cursor-pointer rounded border border-slate-200 bg-white px-1 py-1 text-xs outline-none focus:ring-0 ${column.inputClassName || ""}`}
+                        >
+                          <option value="">{column.placeholder || "—"}</option>
+                          {(column.options || []).map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      {column.type !== "textarea" && column.type !== "select" && (
                         <PrintInput
                           type={column.inputType || "text"}
                           value={row[column.key] ?? ""}

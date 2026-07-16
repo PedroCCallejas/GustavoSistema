@@ -1,10 +1,11 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { FiUpload, FiPrinter } from "react-icons/fi";
 
 import logoPadrao from "../../assets/LogoGustavo.png";
 import { getDB } from "../../services/db";
 import { gerarPixCopiaECola } from "../../utils/pix/pixPayload";
+import { listarProdutos, registrarSaidaFechamento } from "../../services/produtos";
 
 import HeaderFechamento from "../../components/fechamento/HeaderFechamento";
 import ClienteSection from "../../components/fechamento/ClienteSection";
@@ -57,6 +58,18 @@ export default function FechamentoPage() {
   const [payment, setPayment] = useState(initialPayment);
   const [financeiroRegistrado, setFinanceiroRegistrado] = useState(false);
   const [salvandoPdf, setSalvandoPdf] = useState(false);
+  const [produtos, setProdutos] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const lista = await listarProdutos();
+        setProdutos(lista || []);
+      } catch (error) {
+        console.log("Não foi possível carregar produtos:", error?.message);
+      }
+    })();
+  }, []);
 
   const onPrint = useReactToPrint({
     contentRef: printRef,
@@ -130,7 +143,7 @@ export default function FechamentoPage() {
 
     const db = await getDB();
 
-    await db.execute(
+    const resultadoLancamento = await db.execute(
       `INSERT INTO lancamentos (tipo, descricao, valor, forma_pagamento, status_pagamento, data_lancamento)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [
@@ -142,6 +155,23 @@ export default function FechamentoPage() {
         getTodayISO(),
       ]
     );
+
+    const lancamentoId = resultadoLancamento?.lastInsertId ?? null;
+
+    for (const item of materials) {
+      if (item.produtoId) {
+        try {
+          await registrarSaidaFechamento({
+            produtoId: item.produtoId,
+            quantidade: Number(item.qtd) || 0,
+            precoUnit: Number(item.price) || 0,
+            lancamentoId,
+          });
+        } catch (error) {
+          console.error("Erro ao baixar estoque:", item.produtoId, error);
+        }
+      }
+    }
 
     setFinanceiroRegistrado(true);
   };
@@ -160,7 +190,7 @@ export default function FechamentoPage() {
           console.error("Erro ao registrar fechamento no financeiro:", error);
 
           const continuar = window.confirm(
-            "Nao foi possivel registrar o fechamento no financeiro. Deseja continuar gerando o PDF mesmo assim?"
+            "Não foi possível registrar o fechamento no financeiro. Deseja continuar gerando o PDF mesmo assim?"
           );
 
           if (!continuar) {
@@ -200,7 +230,14 @@ export default function FechamentoPage() {
 
   const updateMat = (id, key, value) => {
     setMaterials((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [key]: value } : item))
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        if (key === "produtoId") {
+          const prod = produtos.find((p) => String(p.id) === String(value));
+          return { ...item, produtoId: value, desc: prod ? prod.nome : item.desc };
+        }
+        return { ...item, [key]: value };
+      })
     );
   };
 
@@ -317,6 +354,7 @@ export default function FechamentoPage() {
                 onRemove={delMat}
                 onUpdate={updateMat}
                 subtotalValue={money(totalMat)}
+                produtos={produtos}
               />
 
               <ItensTable
