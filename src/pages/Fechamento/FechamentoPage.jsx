@@ -314,7 +314,7 @@ export default function FechamentoPage() {
             <HeaderFechamento
               logo={logo}
               nome="Gustavo Miguel Monteiro de Andrade"
-              subtitulo="Clínica & Podologia Equina"
+              subtitulo="Médico Veterinário"
               crmv="CRMV-MT 08415"
               tituloDocumento="Fechamento de Conta"
               data={client.date}
