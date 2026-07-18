@@ -58,6 +58,7 @@ export default function ConfiguracoesPage() {
         banco: config.banco,
         agencia: config.agencia,
         conta: config.conta,
+        valor_km: Number(config.valor_km) || 0,
       });
       setMensagem("Configurações salvas. O próximo fechamento já usa esses dados.");
     } catch (error) {
@@ -146,6 +147,24 @@ export default function ConfiguracoesPage() {
           </div>
         </section>
 
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-800">
+            Deslocamento
+          </h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Campo
+              label="Valor por Km rodado (R$)"
+              type="number"
+              value={config.valor_km}
+              onChange={(v) => campo("valor_km", v)}
+            />
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            Ao lançar um serviço de "Deslocamento" e informar os Km rodados, o valor é calculado
+            automaticamente.
+          </p>
+        </section>
+
         {mensagem && (
           <p className="rounded-lg bg-green-50 p-3 text-sm text-green-700">{mensagem}</p>
         )}
@@ -164,15 +183,16 @@ export default function ConfiguracoesPage() {
   );
 }
 
-function Campo({ label, value, onChange }) {
+function Campo({ label, value, onChange, type = "text" }) {
   return (
     <div>
       <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
         {label}
       </label>
       <input
-        type="text"
-        value={value || ""}
+        type={type}
+        step={type === "number" ? "0.01" : undefined}
+        value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
       />

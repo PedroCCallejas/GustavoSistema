@@ -14,6 +14,7 @@ export const configPadrao = {
   banco: "NUBANK",
   agencia: "0001",
   conta: "64462938-4",
+  valor_km: 2.2,
 };
 
 // Busca a linha unica de configuracoes da marca. Usa cache local para

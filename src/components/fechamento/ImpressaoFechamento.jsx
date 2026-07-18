@@ -124,6 +124,7 @@ export default function ImpressaoFechamento({ config, fechamento, logo }) {
                 <tr className="border-b text-left text-xs uppercase text-slate-500">
                   <th className="py-1 pr-2">Descrição</th>
                   <th className="py-1 pr-2">Data</th>
+                  <th className="py-1 pr-2 text-center">Km</th>
                   <th className="py-1 pr-2 text-right">Valor</th>
                 </tr>
               </thead>
@@ -132,6 +133,7 @@ export default function ImpressaoFechamento({ config, fechamento, logo }) {
                   <tr key={i} className="border-b border-slate-100">
                     <td className="py-1 pr-2">{s.desc || "-"}</td>
                     <td className="py-1 pr-2">{s.date || "-"}</td>
+                    <td className="py-1 pr-2 text-center">{s.km || "-"}</td>
                     <td className="py-1 pr-2 text-right font-mono">{money(s.price)}</td>
                   </tr>
                 ))}

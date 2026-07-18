@@ -31,7 +31,7 @@ export default function FechamentoPage() {
 
   const initialMaterials = [{ id: 1, desc: "", qtd: 1, price: 0 }];
 
-  const initialServices = [{ id: 1, desc: "", date: "", price: 0 }];
+  const initialServices = [{ id: 1, desc: "", date: "", km: "", price: 0 }];
 
   const montarPagamento = (cfg) => ({
     method: "pix",
@@ -187,7 +187,7 @@ export default function FechamentoPage() {
         qtd: m.qtd,
         price: m.price,
       })),
-      servicos: services.map((s) => ({ desc: s.desc, date: s.date, price: s.price })),
+      servicos: services.map((s) => ({ desc: s.desc, date: s.date, km: s.km, price: s.price })),
       pagamento: payment,
     };
 
@@ -242,7 +242,7 @@ export default function FechamentoPage() {
     });
     setRelatorio("");
     setMaterials([{ id: 1, desc: "", qtd: 1, price: 0 }]);
-    setServices([{ id: 1, desc: "", date: "", price: 0 }]);
+    setServices([{ id: 1, desc: "", date: "", km: "", price: 0 }]);
     setPayment(montarPagamento(config));
     setLogo(config.logo_url || logoPadrao);
     setFinanceiroRegistrado(false);
@@ -272,12 +272,23 @@ export default function FechamentoPage() {
 
   const updateSrv = (id, key, value) => {
     setServices((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [key]: value } : item))
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        if (key === "km") {
+          const novoItem = { ...item, km: value };
+          if (value !== "") {
+            const taxa = Number(config.valor_km) || 0;
+            novoItem.price = Number(((Number(value) || 0) * taxa).toFixed(2));
+          }
+          return novoItem;
+        }
+        return { ...item, [key]: value };
+      })
     );
   };
 
   const addSrv = () => {
-    setServices((prev) => [...prev, { id: Date.now(), desc: "", date: "", price: 0 }]);
+    setServices((prev) => [...prev, { id: Date.now(), desc: "", date: "", km: "", price: 0 }]);
   };
 
   const delSrv = (id) => {
