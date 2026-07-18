@@ -21,7 +21,7 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="border-b bg-white">
+      <header className="pt-safe border-b bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 p-4">
           <Link
             to="/"

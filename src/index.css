@@ -11,6 +11,13 @@ body {
   background-color: #f3f4f6;
 }
 
+/* Espaco pra nao ficar em cima da barra de status/notch quando o app roda
+   "salvo na tela de inicio" no iPhone (precisa do viewport-fit=cover no
+   index.html pra env() funcionar). */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 @media print {
   @page {
     size: A4;

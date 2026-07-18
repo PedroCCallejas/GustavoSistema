@@ -316,7 +316,7 @@ export default function FechamentoPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 pb-20 md:pb-10">
-      <div className="no-print sticky top-0 z-50 mb-8 bg-slate-900 p-4 text-white shadow-lg">
+      <div className="no-print pt-safe sticky top-0 z-50 mb-8 bg-slate-900 p-4 text-white shadow-lg">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 md:flex-row">
           <h1 className="text-xl font-bold">Gerador de Fechamento</h1>
 

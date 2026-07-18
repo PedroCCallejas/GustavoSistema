@@ -32,6 +32,14 @@ export function AuthProvider({ children }) {
 
   const sair = () => supabase.auth.signOut();
 
+  // Envia um e-mail com link para redefinir a senha. Ao clicar no link, o
+  // Supabase dispara o evento PASSWORD_RECOVERY acima e a tela de definir
+  // senha (a mesma do convite) e mostrada automaticamente.
+  const recuperarSenha = (email) =>
+    supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+
   const definirSenha = async (novaSenha) => {
     const { error } = await supabase.auth.updateUser({ password: novaSenha });
     if (!error) setPrecisaDefinirSenha(false);
@@ -40,7 +48,15 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, carregando, entrar, sair, precisaDefinirSenha, definirSenha }}
+      value={{
+        session,
+        carregando,
+        entrar,
+        sair,
+        precisaDefinirSenha,
+        definirSenha,
+        recuperarSenha,
+      }}
     >
       {children}
     </AuthContext.Provider>
