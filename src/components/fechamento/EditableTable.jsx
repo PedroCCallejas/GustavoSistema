@@ -12,6 +12,7 @@ export default function EditableTable({
   onUpdate,
   subtotalLabel = "Subtotal",
   subtotalValue = "",
+  footer,
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm print:break-inside-avoid print:rounded-none print:border-slate-300 print:shadow-none">
@@ -116,10 +117,14 @@ export default function EditableTable({
         </table>
       </div>
 
-      <div className="mt-3 border-t border-slate-200 pt-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">
-        {subtotalLabel}:{" "}
-        <span className="text-sm text-slate-900 normal-case">{subtotalValue}</span>
-      </div>
+      {footer ? (
+        footer
+      ) : (
+        <div className="mt-3 border-t border-slate-200 pt-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">
+          {subtotalLabel}:{" "}
+          <span className="text-sm text-slate-900 normal-case">{subtotalValue}</span>
+        </div>
+      )}
     </div>
   );
 }

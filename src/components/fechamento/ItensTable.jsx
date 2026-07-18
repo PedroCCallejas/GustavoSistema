@@ -1,4 +1,5 @@
 import EditableTable from "./EditableTable";
+import DescontoServico from "./DescontoServico";
 
 export default function ItensTable({
   tipo = "materiais",
@@ -8,6 +9,10 @@ export default function ItensTable({
   onUpdate,
   subtotalValue = "",
   produtos = [],
+  desconto,
+  setDesconto,
+  subtotalBruto = 0,
+  valorDesconto = 0,
 }) {
   const isMateriais = tipo === "materiais";
 
@@ -95,6 +100,16 @@ export default function ItensTable({
         },
       ];
 
+  const footer =
+    !isMateriais && desconto && setDesconto ? (
+      <DescontoServico
+        desconto={desconto}
+        setDesconto={setDesconto}
+        subtotal={subtotalBruto}
+        valorDesconto={valorDesconto}
+      />
+    ) : undefined;
+
   return (
     <EditableTable
       title={title}
@@ -105,6 +120,7 @@ export default function ItensTable({
       onUpdate={onUpdate}
       columns={columns}
       subtotalValue={subtotalValue}
+      footer={footer}
     />
   );
 }

@@ -5,8 +5,10 @@ import {
   FiAlertTriangle,
   FiPackage,
   FiDollarSign,
+  FiPercent,
 } from "react-icons/fi";
 import { listarProdutos, listarMovimentacoes } from "../../services/produtos";
+import { listarFechamentos } from "../../services/fechamentos";
 
 const money = (v) =>
   Number(v || 0).toLocaleString("pt-BR", {
@@ -17,6 +19,7 @@ const money = (v) =>
 export default function DashboardPage() {
   const [produtos, setProdutos] = useState([]);
   const [movimentacoes, setMovimentacoes] = useState([]);
+  const [fechamentos, setFechamentos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const [filtroProduto, setFiltroProduto] = useState("");
@@ -27,12 +30,14 @@ export default function DashboardPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [prods, movs] = await Promise.all([
+        const [prods, movs, fechs] = await Promise.all([
           listarProdutos(),
           listarMovimentacoes(),
+          listarFechamentos().catch(() => []),
         ]);
         setProdutos(prods || []);
         setMovimentacoes(movs || []);
+        setFechamentos(fechs || []);
       } catch (error) {
         setErro(
           error?.message ||
@@ -146,6 +151,22 @@ export default function DashboardPage() {
     [produtosFiltrados]
   );
 
+  const descontosFiltrados = useMemo(
+    () =>
+      fechamentos.filter((f) => {
+        const d = f.pagamento?.descontoServico;
+        if (!d?.ativo || !(Number(d.valorAbatido) > 0)) return false;
+        return dentroDoPeriodo(f.data_atendimento);
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fechamentos, periodo, dataInicio, dataFim]
+  );
+
+  const totalDescontos = descontosFiltrados.reduce(
+    (acc, f) => acc + (Number(f.pagamento?.descontoServico?.valorAbatido) || 0),
+    0
+  );
+
   if (carregando) {
     return <div className="p-6 text-slate-500">Carregando dashboard...</div>;
   }
@@ -185,6 +206,12 @@ export default function DashboardPage() {
       value: money(resumo.margem),
       icon: FiTrendingUp,
       color: resumo.margem >= 0 ? "text-green-600" : "text-red-600",
+    },
+    {
+      label: "Descontos concedidos (serviços)",
+      value: money(totalDescontos),
+      icon: FiPercent,
+      color: "text-amber-600",
     },
   ];
 
@@ -379,6 +406,58 @@ export default function DashboardPage() {
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-800">
+          <FiPercent className="text-amber-500" />
+          Descontos concedidos em serviços
+        </h2>
+        {descontosFiltrados.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            Nenhum desconto concedido no período selecionado.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs uppercase tracking-wide text-slate-500">
+                  <th className="py-2 pr-2">Data</th>
+                  <th className="py-2 pr-2">Cliente</th>
+                  <th className="py-2 pr-2">Animal</th>
+                  <th className="py-2 pr-2 text-right">Desconto</th>
+                  <th className="py-2 pr-2 text-right">Valor abatido</th>
+                </tr>
+              </thead>
+              <tbody>
+                {descontosFiltrados.map((f) => {
+                  const d = f.pagamento?.descontoServico || {};
+                  return (
+                    <tr key={f.id} className="border-b border-slate-100">
+                      <td className="py-2 pr-2">
+                        {f.data_atendimento
+                          ? new Date(`${f.data_atendimento}T00:00:00`).toLocaleDateString(
+                              "pt-BR"
+                            )
+                          : "-"}
+                      </td>
+                      <td className="py-2 pr-2 font-medium text-slate-800">
+                        {f.cliente_nome || "-"}
+                      </td>
+                      <td className="py-2 pr-2">{f.animal_nome || "-"}</td>
+                      <td className="py-2 pr-2 text-right">
+                        {d.tipo === "percentual" ? `${d.valor}%` : money(d.valor)}
+                      </td>
+                      <td className="py-2 pr-2 text-right font-mono font-bold text-amber-600">
+                        -{money(d.valorAbatido)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </div>

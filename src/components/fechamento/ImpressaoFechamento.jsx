@@ -17,6 +17,8 @@ export default function ImpressaoFechamento({ config, fechamento, logo }) {
   const materiais = fechamento.materiais || [];
   const servicos = fechamento.servicos || [];
   const pagamento = fechamento.pagamento || {};
+  const descontoServico = pagamento.descontoServico;
+  const subtotalServicos = servicos.reduce((acc, s) => acc + (Number(s.price) || 0), 0);
   const dataFormatada = fechamento.data_atendimento
     ? new Date(`${fechamento.data_atendimento}T00:00:00`).toLocaleDateString("pt-BR")
     : "";
@@ -139,6 +141,24 @@ export default function ImpressaoFechamento({ config, fechamento, logo }) {
                 ))}
               </tbody>
             </table>
+
+            {descontoServico?.ativo && descontoServico?.valorAbatido > 0 && (
+              <div className="mt-2 space-y-1 border-t border-slate-200 pt-2 text-right text-xs">
+                <p className="font-bold uppercase tracking-wide text-slate-500">
+                  Subtotal serviços:{" "}
+                  <span className="text-sm normal-case text-slate-900">
+                    {money(subtotalServicos)}
+                  </span>
+                </p>
+                <p className="font-bold uppercase tracking-wide text-red-500">
+                  Desconto
+                  {descontoServico.tipo === "percentual" ? ` (${descontoServico.valor}%)` : ""}:{" "}
+                  <span className="text-sm normal-case">
+                    -{money(descontoServico.valorAbatido)}
+                  </span>
+                </p>
+              </div>
+            )}
           </div>
         )}
 

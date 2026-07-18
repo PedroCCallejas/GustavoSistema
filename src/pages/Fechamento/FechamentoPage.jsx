@@ -48,12 +48,15 @@ export default function FechamentoPage() {
     descricaoPix: cfg.pix_descricao || "Fechamento de atendimento",
   });
 
+  const initialDesconto = { ativo: false, tipo: "percentual", valor: "" };
+
   const [config, setConfig] = useState(configPadrao);
   const [logo, setLogo] = useState(logoPadrao);
   const [client, setClient] = useState(initialClient);
   const [relatorio, setRelatorio] = useState("");
   const [materials, setMaterials] = useState(initialMaterials);
   const [services, setServices] = useState(initialServices);
+  const [descontoServico, setDescontoServico] = useState(initialDesconto);
   const [payment, setPayment] = useState(montarPagamento(configPadrao));
   const [financeiroRegistrado, setFinanceiroRegistrado] = useState(false);
   const [salvandoPdf, setSalvandoPdf] = useState(false);
@@ -117,8 +120,15 @@ export default function FechamentoPage() {
     }, 0);
   }, [services]);
 
+  const valorDescontoServico = useMemo(() => {
+    if (!descontoServico.ativo) return 0;
+    const v = Number(descontoServico.valor) || 0;
+    const bruto = descontoServico.tipo === "percentual" ? (totalSrv * v) / 100 : v;
+    return Math.min(Math.max(bruto, 0), totalSrv);
+  }, [descontoServico, totalSrv]);
+
   const subtotal = totalMat + totalSrv;
-  const desconto = Number(payment.discount) || 0;
+  const desconto = valorDescontoServico;
   const acrescimo = Number(payment.addition) || 0;
   const totalGeral = subtotal - desconto + acrescimo;
 
@@ -188,7 +198,15 @@ export default function FechamentoPage() {
         price: m.price,
       })),
       servicos: services.map((s) => ({ desc: s.desc, date: s.date, km: s.km, price: s.price })),
-      pagamento: payment,
+      pagamento: {
+        ...payment,
+        descontoServico: {
+          ativo: descontoServico.ativo,
+          tipo: descontoServico.tipo,
+          valor: Number(descontoServico.valor) || 0,
+          valorAbatido: valorDescontoServico,
+        },
+      },
     };
 
     const resultado = await processarFechamento({ lancamento, itens, snapshot });
@@ -243,6 +261,7 @@ export default function FechamentoPage() {
     setRelatorio("");
     setMaterials([{ id: 1, desc: "", qtd: 1, price: 0 }]);
     setServices([{ id: 1, desc: "", date: "", km: "", price: 0 }]);
+    setDescontoServico(initialDesconto);
     setPayment(montarPagamento(config));
     setLogo(config.logo_url || logoPadrao);
     setFinanceiroRegistrado(false);
@@ -397,6 +416,10 @@ export default function FechamentoPage() {
                 onRemove={delSrv}
                 onUpdate={updateSrv}
                 subtotalValue={money(totalSrv)}
+                desconto={descontoServico}
+                setDesconto={setDescontoServico}
+                subtotalBruto={totalSrv}
+                valorDesconto={valorDescontoServico}
               />
             </div>
 
