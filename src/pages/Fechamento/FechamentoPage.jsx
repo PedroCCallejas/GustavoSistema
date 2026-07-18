@@ -6,6 +6,8 @@ import logoPadrao from "../../assets/LogoGustavo.png";
 import { gerarPixCopiaECola } from "../../utils/pix/pixPayload";
 import { listarProdutos } from "../../services/produtos";
 import { processarFechamento } from "../../services/filaOffline";
+import { obterConfiguracoes, configPadrao } from "../../services/configuracoes";
+import { listarClientes, listarAnimais } from "../../services/clientes";
 
 import HeaderFechamento from "../../components/fechamento/HeaderFechamento";
 import ClienteSection from "../../components/fechamento/ClienteSection";
@@ -31,30 +33,33 @@ export default function FechamentoPage() {
 
   const initialServices = [{ id: 1, desc: "", date: "", price: 0 }];
 
-  const initialPayment = {
+  const montarPagamento = (cfg) => ({
     method: "pix",
     status: "pendente",
     discount: 0,
     addition: 0,
-    pix: "+5565996910049",
-    bank: "NUBANK",
-    agency: "0001",
-    cc: "64462938-4",
-    favorecido: "Gustavo Miguel Monteiro de Andrade",
-    cidade: "CUIABA",
+    pix: cfg.pix_chave || "",
+    bank: cfg.banco || "",
+    agency: cfg.agencia || "",
+    cc: cfg.conta || "",
+    favorecido: cfg.pix_favorecido || "",
+    cidade: cfg.pix_cidade || "",
     txid: "***",
-    descricaoPix: "Fechamento de atendimento",
-  };
+    descricaoPix: cfg.pix_descricao || "Fechamento de atendimento",
+  });
 
+  const [config, setConfig] = useState(configPadrao);
   const [logo, setLogo] = useState(logoPadrao);
   const [client, setClient] = useState(initialClient);
   const [relatorio, setRelatorio] = useState("");
   const [materials, setMaterials] = useState(initialMaterials);
   const [services, setServices] = useState(initialServices);
-  const [payment, setPayment] = useState(initialPayment);
+  const [payment, setPayment] = useState(montarPagamento(configPadrao));
   const [financeiroRegistrado, setFinanceiroRegistrado] = useState(false);
   const [salvandoPdf, setSalvandoPdf] = useState(false);
   const [produtos, setProdutos] = useState([]);
+  const [clientes, setClientes] = useState([]);
+  const [animais, setAnimais] = useState([]);
   const [salvoOffline, setSalvoOffline] = useState(false);
 
   useEffect(() => {
@@ -65,7 +70,25 @@ export default function FechamentoPage() {
       } catch (error) {
         console.log("Não foi possível carregar produtos:", error?.message);
       }
+
+      try {
+        const cfg = await obterConfiguracoes();
+        setConfig(cfg);
+        setPayment(montarPagamento(cfg));
+        if (cfg.logo_url) setLogo(cfg.logo_url);
+      } catch (error) {
+        console.log("Não foi possível carregar configurações:", error?.message);
+      }
+
+      try {
+        const [c, a] = await Promise.all([listarClientes(), listarAnimais()]);
+        setClientes(c || []);
+        setAnimais(a || []);
+      } catch (error) {
+        console.log("Não foi possível carregar clientes/animais:", error?.message);
+      }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onPrint = useReactToPrint({
@@ -155,7 +178,20 @@ export default function FechamentoPage() {
       data_lancamento: getTodayISO(),
     };
 
-    const resultado = await processarFechamento({ lancamento, itens });
+    const snapshot = {
+      clienteNome: nomeCliente,
+      animalNome: animal || "",
+      relatorio,
+      materiais: materials.map((m) => ({
+        desc: m.desc,
+        qtd: m.qtd,
+        price: m.price,
+      })),
+      servicos: services.map((s) => ({ desc: s.desc, date: s.date, price: s.price })),
+      pagamento: payment,
+    };
+
+    const resultado = await processarFechamento({ lancamento, itens, snapshot });
     setFinanceiroRegistrado(true);
     setSalvoOffline(resultado.modo === "offline");
   };
@@ -207,8 +243,8 @@ export default function FechamentoPage() {
     setRelatorio("");
     setMaterials([{ id: 1, desc: "", qtd: 1, price: 0 }]);
     setServices([{ id: 1, desc: "", date: "", price: 0 }]);
-    setPayment(initialPayment);
-    setLogo(logoPadrao);
+    setPayment(montarPagamento(config));
+    setLogo(config.logo_url || logoPadrao);
     setFinanceiroRegistrado(false);
     setSalvoOffline(false);
   };
@@ -313,14 +349,19 @@ export default function FechamentoPage() {
           <div className="relative" style={{ zIndex: 10 }}>
             <HeaderFechamento
               logo={logo}
-              nome="Gustavo Miguel Monteiro de Andrade"
-              subtitulo="Médico Veterinário"
-              crmv="CRMV-MT 08415"
+              nome={config.nome}
+              subtitulo={config.subtitulo}
+              crmv={config.crmv}
               tituloDocumento="Fechamento de Conta"
               data={client.date}
             />
 
-            <ClienteSection client={client} setClient={setClient} />
+            <ClienteSection
+              client={client}
+              setClient={setClient}
+              clientes={clientes}
+              animais={animais}
+            />
 
             <RelatorioSection
               value={relatorio}

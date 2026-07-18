@@ -36,6 +36,7 @@ async function enviar(registro) {
     p_lancamento_id: registro.lancamentoId,
     p_lancamento: registro.lancamento,
     p_itens: registro.itens,
+    p_snapshot: registro.snapshot || null,
   });
   if (error) throw error;
 }
@@ -47,8 +48,8 @@ function enfileirar(registro) {
 }
 
 // Salva o fechamento: envia agora se online; senao guarda na fila local.
-export async function processarFechamento({ lancamento, itens }) {
-  const registro = { lancamentoId: novoId(), lancamento, itens: itens || [] };
+export async function processarFechamento({ lancamento, itens, snapshot }) {
+  const registro = { lancamentoId: novoId(), lancamento, itens: itens || [], snapshot: snapshot || null };
 
   if (typeof navigator !== "undefined" && !navigator.onLine) {
     enfileirar(registro);

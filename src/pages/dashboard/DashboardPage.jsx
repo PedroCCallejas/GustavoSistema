@@ -20,6 +20,9 @@ export default function DashboardPage() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const [filtroProduto, setFiltroProduto] = useState("");
+  const [periodo, setPeriodo] = useState("todos");
+  const [dataInicio, setDataInicio] = useState("");
+  const [dataFim, setDataFim] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -49,12 +52,39 @@ export default function DashboardPage() {
     [produtos, filtroProduto]
   );
 
+  const dentroDoPeriodo = (dataStr) => {
+    if (periodo === "todos" || !dataStr) return true;
+
+    const hoje = new Date();
+    const yyyy = hoje.getFullYear();
+    const mm = String(hoje.getMonth() + 1).padStart(2, "0");
+
+    if (periodo === "este-mes") {
+      return dataStr.startsWith(`${yyyy}-${mm}`);
+    }
+    if (periodo === "mes-passado") {
+      const prev = new Date(yyyy, hoje.getMonth() - 1, 1);
+      const py = prev.getFullYear();
+      const pm = String(prev.getMonth() + 1).padStart(2, "0");
+      return dataStr.startsWith(`${py}-${pm}`);
+    }
+    if (periodo === "personalizado") {
+      if (dataInicio && dataStr < dataInicio) return false;
+      if (dataFim && dataStr > dataFim) return false;
+      return true;
+    }
+    return true;
+  };
+
   const movimentacoesFiltradas = useMemo(
     () =>
-      filtroProduto
-        ? movimentacoes.filter((m) => String(m.produto_id) === filtroProduto)
-        : movimentacoes,
-    [movimentacoes, filtroProduto]
+      movimentacoes.filter((m) => {
+        if (filtroProduto && String(m.produto_id) !== filtroProduto) return false;
+        if (!dentroDoPeriodo(m.data)) return false;
+        return true;
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [movimentacoes, filtroProduto, periodo, dataInicio, dataFim]
   );
 
   const resumo = useMemo(() => {
@@ -160,25 +190,61 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-3">
         <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
 
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Filtrar por produto
-          </label>
-          <select
-            value={filtroProduto}
-            onChange={(e) => setFiltroProduto(e.target.value)}
-            className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
-          >
-            <option value="">Todos os produtos</option>
-            {produtos.map((p) => (
-              <option key={p.id} value={String(p.id)}>
-                {p.nome}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Produto
+            </label>
+            <select
+              value={filtroProduto}
+              onChange={(e) => setFiltroProduto(e.target.value)}
+              className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+            >
+              <option value="">Todos os produtos</option>
+              {produtos.map((p) => (
+                <option key={p.id} value={String(p.id)}>
+                  {p.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Período
+            </label>
+            <select
+              value={periodo}
+              onChange={(e) => setPeriodo(e.target.value)}
+              className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+            >
+              <option value="todos">Todo o período</option>
+              <option value="este-mes">Este mês</option>
+              <option value="mes-passado">Mês passado</option>
+              <option value="personalizado">Personalizado</option>
+            </select>
+          </div>
+
+          {periodo === "personalizado" && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={dataInicio}
+                onChange={(e) => setDataInicio(e.target.value)}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+              />
+              <span className="text-xs text-slate-400">até</span>
+              <input
+                type="date"
+                value={dataFim}
+                onChange={(e) => setDataFim(e.target.value)}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+              />
+            </div>
+          )}
         </div>
       </div>
 

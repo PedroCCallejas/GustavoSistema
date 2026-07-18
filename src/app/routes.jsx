@@ -5,6 +5,9 @@ import FechamentoPage from "../pages/Fechamento/FechamentoPage";
 import EstoquePage from "../pages/estoque/EstoquePage";
 import DashboardPage from "../pages/dashboard/DashboardPage";
 import MigracaoPage from "../pages/migracao/MigracaoPage";
+import ConfiguracoesPage from "../pages/configuracoes/ConfiguracoesPage";
+import ClientesPage from "../pages/clientes/ClientesPage";
+import HistoricoPage from "../pages/historico/HistoricoPage";
 
 export const routes = [
   {
@@ -16,6 +19,9 @@ export const routes = [
       { path: "/estoque", element: <EstoquePage /> },
       { path: "/dashboard", element: <DashboardPage /> },
       { path: "/migracao", element: <MigracaoPage /> },
+      { path: "/configuracoes", element: <ConfiguracoesPage /> },
+      { path: "/clientes", element: <ClientesPage /> },
+      { path: "/historico", element: <HistoricoPage /> },
     ],
   },
 ];

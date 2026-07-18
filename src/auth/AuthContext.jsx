@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [carregando, setCarregando] = useState(true);
+  const [precisaDefinirSenha, setPrecisaDefinirSenha] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -13,8 +14,14 @@ export function AuthProvider({ children }) {
       setCarregando(false);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    // Quando o link de convite/recuperacao de senha e aberto, o Supabase
+    // cria uma sessao temporaria e dispara este evento: precisamos pedir
+    // para a pessoa criar a senha antes de liberar o app.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
+      if (event === "PASSWORD_RECOVERY") {
+        setPrecisaDefinirSenha(true);
+      }
     });
 
     return () => sub.subscription.unsubscribe();
@@ -25,8 +32,16 @@ export function AuthProvider({ children }) {
 
   const sair = () => supabase.auth.signOut();
 
+  const definirSenha = async (novaSenha) => {
+    const { error } = await supabase.auth.updateUser({ password: novaSenha });
+    if (!error) setPrecisaDefinirSenha(false);
+    return { error };
+  };
+
   return (
-    <AuthContext.Provider value={{ session, carregando, entrar, sair }}>
+    <AuthContext.Provider
+      value={{ session, carregando, entrar, sair, precisaDefinirSenha, definirSenha }}
+    >
       {children}
     </AuthContext.Provider>
   );

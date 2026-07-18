@@ -6,9 +6,12 @@ import BarraPendentes from "../components/BarraPendentes";
 
 const links = [
   { to: "/fechamento", label: "Fechamento" },
+  { to: "/historico", label: "Histórico" },
+  { to: "/clientes", label: "Clientes" },
   { to: "/financeiro", label: "Financeiro" },
   { to: "/estoque", label: "Estoque" },
   { to: "/dashboard", label: "Dashboard" },
+  { to: "/configuracoes", label: "Configurações" },
   { to: "/migracao", label: "Migrar" },
 ];
 
@@ -32,7 +35,7 @@ export default function AppLayout() {
           </Link>
 
           {/* Menu do computador */}
-          <nav className="hidden items-center gap-3 text-sm md:flex">
+          <nav className="hidden flex-wrap items-center justify-end gap-x-3 gap-y-1 text-sm md:flex">
             {links.map((l) => (
               <Link key={l.to} className="hover:underline" to={l.to}>
                 {l.label}
