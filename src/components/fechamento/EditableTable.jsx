@@ -31,7 +31,7 @@ export default function EditableTable({
         </button>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto print:overflow-visible">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-left text-[11px] uppercase tracking-wider text-slate-500">

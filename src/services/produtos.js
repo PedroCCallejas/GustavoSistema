@@ -28,6 +28,30 @@ export async function listarProdutos() {
   }
 }
 
+// Ajusta o cache local de produtos (usado no Fechamento offline) para refletir
+// a baixa de estoque na hora, sem esperar sincronizar. E so cosmetico/local:
+// quando a rede voltar, listarProdutos() busca o valor real do servidor e
+// sobrescreve esse cache, entao nao ha risco de ficar dessincronizado.
+export function aplicarBaixaLocal(itens = []) {
+  try {
+    const cache = JSON.parse(localStorage.getItem(CACHE_PRODUTOS) || "[]");
+    if (!Array.isArray(cache) || !cache.length) return;
+
+    const porId = new Map(cache.map((p) => [String(p.id), p]));
+    for (const item of itens) {
+      if (!item?.produtoId) continue;
+      const prod = porId.get(String(item.produtoId));
+      if (!prod) continue;
+      const qtd = Number(item.quantidade) || 0;
+      prod.quantidade = (Number(prod.quantidade) || 0) - qtd;
+    }
+
+    localStorage.setItem(CACHE_PRODUTOS, JSON.stringify(cache));
+  } catch {
+    // ajuste e apenas cosmetico/local; se falhar, nao impede o fechamento
+  }
+}
+
 export async function criarProduto({ nome, quantidade = 0, unidade = "un", custoAtual = 0 }) {
   const c = Number(custoAtual) || 0;
   const { error } = await supabase.from("produtos").insert({

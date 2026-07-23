@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { aplicarBaixaLocal } from "./produtos";
 
 const CHAVE = "fila_fechamentos";
 
@@ -50,6 +51,11 @@ function enfileirar(registro) {
 // Salva o fechamento: envia agora se online; senao guarda na fila local.
 export async function processarFechamento({ lancamento, itens, snapshot }) {
   const registro = { lancamentoId: novoId(), lancamento, itens: itens || [], snapshot: snapshot || null };
+
+  // Baixa otimista no cache local: o Gustavo ve o estoque ja refletido na hora,
+  // mesmo offline. Quando sincronizar, o servidor faz a baixa real (RPC) e o
+  // proximo listarProdutos() online sobrescreve o cache com o valor oficial.
+  aplicarBaixaLocal(registro.itens);
 
   if (typeof navigator !== "undefined" && !navigator.onLine) {
     enfileirar(registro);
