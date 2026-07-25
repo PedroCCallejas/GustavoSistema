@@ -1,5 +1,7 @@
 import HeaderFechamento from "./HeaderFechamento";
 import TotaisCard from "./TotaisCard";
+import PixQrCard from "./PixQrCard";
+import { gerarPixCopiaECola } from "../../utils/pix/pixPayload";
 
 const money = (v) =>
   Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -18,10 +20,28 @@ export default function ImpressaoFechamento({ config, fechamento, logo }) {
   const servicos = fechamento.servicos || [];
   const pagamento = fechamento.pagamento || {};
   const descontoServico = pagamento.descontoServico;
+  const subtotalMateriais = materiais.reduce(
+    (acc, m) => acc + (Number(m.qtd) || 0) * (Number(m.price) || 0),
+    0
+  );
   const subtotalServicos = servicos.reduce((acc, s) => acc + (Number(s.price) || 0), 0);
+  const totalComDescontoServicos =
+    subtotalServicos - (Number(descontoServico?.valorAbatido) || 0);
   const dataFormatada = fechamento.data_atendimento
     ? new Date(`${fechamento.data_atendimento}T00:00:00`).toLocaleDateString("pt-BR")
     : "";
+
+  const pixPayload =
+    pagamento.method === "pix" && pagamento.pix
+      ? gerarPixCopiaECola({
+          chave: pagamento.pix,
+          nome: pagamento.favorecido,
+          cidade: pagamento.cidade,
+          valor: fechamento.total,
+          txid: pagamento.txid || "***",
+          descricao: pagamento.descricaoPix || "Fechamento",
+        })
+      : "";
 
   return (
     <div className="printable-area relative rounded-2xl border border-slate-200 bg-white p-6 shadow">
@@ -113,6 +133,12 @@ export default function ImpressaoFechamento({ config, fechamento, logo }) {
                 ))}
               </tbody>
             </table>
+            <div className="mt-2 border-t border-slate-200 pt-2 text-right text-xs font-bold uppercase tracking-wide text-slate-500">
+              Subtotal:{" "}
+              <span className="text-sm normal-case text-slate-900">
+                {money(subtotalMateriais)}
+              </span>
+            </div>
           </div>
         )}
 
@@ -142,14 +168,15 @@ export default function ImpressaoFechamento({ config, fechamento, logo }) {
               </tbody>
             </table>
 
-            {descontoServico?.ativo && descontoServico?.valorAbatido > 0 && (
-              <div className="mt-2 space-y-1 border-t border-slate-200 pt-2 text-right text-xs">
-                <p className="font-bold uppercase tracking-wide text-slate-500">
-                  Subtotal serviços:{" "}
-                  <span className="text-sm normal-case text-slate-900">
-                    {money(subtotalServicos)}
-                  </span>
-                </p>
+            <div className="mt-2 space-y-1 border-t border-slate-200 pt-2 text-right text-xs">
+              <p className="font-bold uppercase tracking-wide text-slate-500">
+                Subtotal serviços:{" "}
+                <span className="text-sm normal-case text-slate-900">
+                  {money(subtotalServicos)}
+                </span>
+              </p>
+
+              {descontoServico?.ativo && descontoServico?.valorAbatido > 0 && (
                 <p className="font-bold uppercase tracking-wide text-red-500">
                   Desconto
                   {descontoServico.tipo === "percentual" ? ` (${descontoServico.valor}%)` : ""}:{" "}
@@ -157,8 +184,15 @@ export default function ImpressaoFechamento({ config, fechamento, logo }) {
                     -{money(descontoServico.valorAbatido)}
                   </span>
                 </p>
-              </div>
-            )}
+              )}
+
+              <p className="font-bold uppercase tracking-wide text-slate-500">
+                Total serviços:{" "}
+                <span className="text-sm normal-case text-slate-900">
+                  {money(totalComDescontoServicos)}
+                </span>
+              </p>
+            </div>
           </div>
         )}
 
@@ -166,15 +200,59 @@ export default function ImpressaoFechamento({ config, fechamento, logo }) {
           <TotaisCard total={fechamento.total} />
         </div>
 
-        <div className="avoid-break mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm">
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-            Forma de pagamento
-          </p>
-          <p className="mt-1 font-semibold text-slate-800">
-            {formasPagamento[pagamento.method] || pagamento.method || "-"}
-            {pagamento.status ? ` · ${pagamento.status}` : ""}
-          </p>
+        <div className="avoid-break mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
+          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-900">
+            Dados para pagamento
+          </h4>
+
+          <div className="flex flex-col justify-between gap-4 md:flex-row">
+            <div>
+              <p className="mb-1">
+                <span className="font-bold text-slate-700">Forma:</span>{" "}
+                {formasPagamento[pagamento.method] || pagamento.method || "-"}
+              </p>
+              <p className="mb-1">
+                <span className="font-bold text-slate-700">Status:</span>{" "}
+                {pagamento.status || "-"}
+              </p>
+              <p className="mb-1">
+                <span className="font-bold text-slate-700">PIX:</span>{" "}
+                {pagamento.pix || "_____________________"}
+              </p>
+              <p>
+                <span className="font-bold text-slate-700">Favorecido:</span>{" "}
+                {pagamento.favorecido || "-"}
+              </p>
+            </div>
+
+            <div className="md:text-right">
+              <p className="mb-1">
+                <span className="font-bold text-slate-700">Banco:</span>{" "}
+                {pagamento.bank || "______"}
+                <span className="mx-2 text-slate-300">|</span>
+                <span className="font-bold text-slate-700">Ag:</span>{" "}
+                {pagamento.agency || "____"}
+                <span className="mx-2 text-slate-300">|</span>
+                <span className="font-bold text-slate-700">CC:</span>{" "}
+                {pagamento.cc || "______"}
+              </p>
+              <p className="mt-1 text-xs italic text-slate-400">
+                * Favor enviar comprovante via WhatsApp.
+              </p>
+            </div>
+          </div>
         </div>
+
+        {pagamento.method === "pix" && pixPayload && (
+          <div className="mt-6">
+            <PixQrCard
+              payload={pixPayload}
+              chave={pagamento.pix}
+              beneficiario={pagamento.favorecido}
+              valor={fechamento.total}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
