@@ -220,6 +220,13 @@ export default function FechamentoPage() {
     salvandoPdfRef.current = true;
     setSalvandoPdf(true);
 
+    // No celular (Safari/Chrome iOS/Android), o nome sugerido do PDF vem do
+    // titulo da pagina, nao do titulo do iframe de impressao (que e o que o
+    // react-to-print usa e so funciona no desktop). Por isso trocamos o
+    // titulo da pagina temporariamente, so durante a impressao.
+    const tituloOriginal = document.title;
+    document.title = `fechamento-${client.name?.trim() || "cliente"}`;
+
     try {
       if (!financeiroRegistrado && totalGeral > 0) {
         try {
@@ -239,6 +246,7 @@ export default function FechamentoPage() {
 
       await onPrint?.();
     } finally {
+      document.title = tituloOriginal;
       salvandoPdfRef.current = false;
       setSalvandoPdf(false);
     }
