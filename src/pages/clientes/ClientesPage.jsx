@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiPlus, FiTrash2, FiEdit2, FiSave, FiX } from "react-icons/fi";
 import {
   listarClientes,
   listarAnimais,
   criarCliente,
+  atualizarCliente,
   deletarCliente,
   criarAnimal,
   deletarAnimal,
@@ -18,6 +19,9 @@ export default function ClientesPage() {
 
   const [novoCliente, setNovoCliente] = useState({ nome: "", telefone: "" });
   const [novoAnimal, setNovoAnimal] = useState({});
+
+  const [editandoId, setEditandoId] = useState(null);
+  const [editCliente, setEditCliente] = useState({ nome: "", telefone: "" });
 
   const carregar = async () => {
     setCarregando(true);
@@ -67,6 +71,33 @@ export default function ClientesPage() {
       carregar();
     } catch (error) {
       setErro(error?.message || "Não foi possível excluir o cliente.");
+    }
+  };
+
+  const iniciarEdicaoCliente = (cliente) => {
+    setEditandoId(cliente.id);
+    setEditCliente({ nome: cliente.nome || "", telefone: cliente.telefone || "" });
+  };
+
+  const cancelarEdicaoCliente = () => {
+    setEditandoId(null);
+    setEditCliente({ nome: "", telefone: "" });
+  };
+
+  const salvarEdicaoCliente = async (id) => {
+    if (!editCliente.nome.trim()) {
+      setErro("Informe o nome do cliente.");
+      return;
+    }
+    try {
+      await atualizarCliente(id, {
+        nome: editCliente.nome.trim(),
+        telefone: editCliente.telefone.trim() || null,
+      });
+      cancelarEdicaoCliente();
+      carregar();
+    } catch (error) {
+      setErro(error?.message || "Não foi possível atualizar o cliente.");
     }
   };
 
@@ -152,19 +183,77 @@ export default function ClientesPage() {
         <div className="space-y-4">
           {clientes.map((c) => (
             <div key={c.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="mb-2 flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-slate-800">{c.nome}</p>
-                  {c.telefone && <p className="text-xs text-slate-500">{c.telefone}</p>}
+              {editandoId === c.id ? (
+                <div className="mb-3 flex flex-wrap items-end gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Nome
+                    </label>
+                    <input
+                      type="text"
+                      value={editCliente.nome}
+                      onChange={(e) =>
+                        setEditCliente((p) => ({ ...p, nome: e.target.value }))
+                      }
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Telefone
+                    </label>
+                    <input
+                      type="text"
+                      value={editCliente.telefone}
+                      onChange={(e) =>
+                        setEditCliente((p) => ({ ...p, telefone: e.target.value }))
+                      }
+                      placeholder="(65) 90000-0000"
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                  </div>
+                  <button
+                    onClick={() => salvarEdicaoCliente(c.id)}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  >
+                    <FiSave size={16} /> Salvar
+                  </button>
+                  <button
+                    onClick={cancelarEdicaoCliente}
+                    className="inline-flex items-center gap-2 rounded-lg bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300"
+                  >
+                    <FiX size={16} /> Cancelar
+                  </button>
                 </div>
-                <button
-                  onClick={() => removerCliente(c)}
-                  className="rounded-lg p-2 text-red-600 hover:bg-red-50"
-                  aria-label="Excluir cliente"
-                >
-                  <FiTrash2 size={16} />
-                </button>
-              </div>
+              ) : (
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <div>
+                    <p className="font-bold text-slate-800">{c.nome}</p>
+                    {c.telefone ? (
+                      <p className="text-xs text-slate-500">{c.telefone}</p>
+                    ) : (
+                      <p className="text-xs italic text-amber-600">Sem telefone cadastrado</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => iniciarEdicaoCliente(c)}
+                      className="rounded-lg p-2 text-slate-600 hover:bg-slate-100"
+                      aria-label="Editar cliente"
+                      title="Editar nome/telefone"
+                    >
+                      <FiEdit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => removerCliente(c)}
+                      className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                      aria-label="Excluir cliente"
+                    >
+                      <FiTrash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <ul className="mb-2 space-y-1">
                 {(animaisPorCliente[c.id] || []).map((a) => (

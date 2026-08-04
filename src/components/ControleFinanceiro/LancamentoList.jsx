@@ -221,27 +221,29 @@ export default function LancamentoList({ refresh, filters }) {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 md:justify-end">
+                  <div className="flex flex-wrap items-center justify-between gap-2 md:flex-nowrap md:justify-end">
                     <span className={`text-base font-bold ${tipoStyle.value}`}>
                       {item.tipo === "saida" ? "- " : "+ "}
                       {formatCurrency(item.valor)}
                     </span>
 
-                    <button
-                      onClick={() => iniciarEdicao(item)}
-                      className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-                    >
-                      <FiEdit2 size={16} />
-                      Editar
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => iniciarEdicao(item)}
+                        className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                      >
+                        <FiEdit2 size={16} />
+                        Editar
+                      </button>
 
-                    <button
-                      onClick={() => excluir(item.id)}
-                      className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-600"
-                    >
-                      <FiTrash2 size={16} />
-                      Excluir
-                    </button>
+                      <button
+                        onClick={() => excluir(item.id)}
+                        className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-600"
+                      >
+                        <FiTrash2 size={16} />
+                        Excluir
+                      </button>
+                    </div>
                   </div>
                 </div>
 

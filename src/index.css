@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* Forca o app a sempre renderizar em modo claro, mesmo se o celular estiver
+   com "modo escuro" ativado no sistema. Sem isso, alguns navegadores (Chrome
+   Android, Safari) escurecem a pagina automaticamente -- inclusive na hora
+   de gerar o PDF -- e o texto (ex: nome do cliente) pode ficar ilegivel. */
+:root {
+  color-scheme: light;
+}
+
 /* Estilos globais */
 html,
 body {

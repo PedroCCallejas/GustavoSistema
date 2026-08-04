@@ -58,8 +58,19 @@ export default function HistoricoPage() {
 
   const reimprimir = async (fechamento) => {
     setSelecionado(fechamento);
+
+    // No celular, o nome sugerido do PDF vem do titulo da pagina (nao do
+    // titulo do iframe de impressao, que so funciona no desktop). Por isso
+    // trocamos o titulo da pagina temporariamente, so durante a impressao
+    // (mesma correcao ja aplicada na tela de Fechamento).
+    const tituloOriginal = document.title;
+    document.title = `fechamento-${fechamento?.cliente_nome?.trim() || "reimpressao"}`;
+
     // aguarda o proximo ciclo para o ImpressaoFechamento montar com os dados certos
-    setTimeout(() => imprimir?.(), 50);
+    setTimeout(async () => {
+      await imprimir?.();
+      document.title = tituloOriginal;
+    }, 50);
   };
 
   return (
