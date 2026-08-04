@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
-import { FiUpload, FiPrinter } from "react-icons/fi";
+import { FiUpload, FiPrinter, FiMessageCircle } from "react-icons/fi";
 
 import logoPadrao from "../../assets/LogoGustavo.png";
 import { gerarPixCopiaECola } from "../../utils/pix/pixPayload";
+import { montarLinkWhatsapp } from "../../utils/whatsapp/whatsappLink";
 import { listarProdutos } from "../../services/produtos";
 import { processarFechamento } from "../../services/filaOffline";
 import { obterConfiguracoes, configPadrao } from "../../services/configuracoes";
@@ -131,6 +132,55 @@ export default function FechamentoPage() {
   const desconto = valorDescontoServico;
   const acrescimo = Number(payment.addition) || 0;
   const totalGeral = subtotal - desconto + acrescimo;
+
+  // Cliente cadastrado (com telefone) que bate com o nome digitado no
+  // fechamento. So encontra quem o Gustavo ja cadastrou -- nao envia pra
+  // ninguem de fora disso.
+  const clienteSelecionado = useMemo(() => {
+    const nome = client.name?.trim().toLowerCase();
+    if (!nome) return null;
+    return clientes.find((c) => c.nome?.trim().toLowerCase() === nome) || null;
+  }, [clientes, client.name]);
+
+  const mensagemWhatsapp = useMemo(() => {
+    const linhas = [
+      `Olá ${client.name || "tudo bem"}! Aqui é do consultório de ${config.nome || "Gustavo Andrade"}.`,
+      "",
+      `Segue o resumo do fechamento${client.animal ? ` do(a) ${client.animal}` : ""}:`,
+    ];
+
+    if (totalMat > 0) linhas.push(`Materiais: ${money(totalMat)}`);
+    if (totalSrv > 0) linhas.push(`Serviços: ${money(totalSrv)}`);
+    if (valorDescontoServico > 0) linhas.push(`Desconto: -${money(valorDescontoServico)}`);
+    linhas.push(`Total: ${money(totalGeral)}`);
+    linhas.push("");
+    linhas.push(
+      `Forma de pagamento: ${payment.method || "-"}${payment.status ? ` (${payment.status})` : ""}`
+    );
+    linhas.push("");
+    linhas.push("Qualquer dúvida, estou à disposição!");
+
+    return linhas.join("\n");
+  }, [
+    client.name,
+    client.animal,
+    config.nome,
+    totalMat,
+    totalSrv,
+    valorDescontoServico,
+    totalGeral,
+    payment.method,
+    payment.status,
+  ]);
+
+  const linkWhatsapp = useMemo(
+    () =>
+      montarLinkWhatsapp({
+        telefone: clienteSelecionado?.telefone,
+        mensagem: mensagemWhatsapp,
+      }),
+    [clienteSelecionado, mensagemWhatsapp]
+  );
 
   const pixPayload = useMemo(() => {
     if (payment.method !== "pix") return "";
@@ -357,6 +407,32 @@ export default function FechamentoPage() {
               <FiPrinter />
               {salvandoPdf ? "GERANDO PDF..." : "SALVAR PDF"}
             </button>
+
+            {linkWhatsapp ? (
+              <a
+                href={linkWhatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded bg-emerald-600 px-5 py-2 text-sm font-bold shadow-md transition hover:bg-emerald-500"
+              >
+                <FiMessageCircle />
+                ENVIAR POR WHATSAPP
+              </a>
+            ) : (
+              client.name?.trim() && (
+                <span
+                  title={
+                    clienteSelecionado
+                      ? "Este cliente não tem telefone cadastrado."
+                      : "Cliente não cadastrado. Cadastre em Clientes com o telefone."
+                  }
+                  className="flex cursor-not-allowed items-center gap-2 rounded bg-slate-700 px-5 py-2 text-sm font-bold text-slate-400 shadow-md"
+                >
+                  <FiMessageCircle />
+                  SEM WHATSAPP
+                </span>
+              )
+            )}
           </div>
         </div>
       </div>
