@@ -44,7 +44,10 @@ export default function ImpressaoFechamento({ config, fechamento, logo }) {
       : "";
 
   return (
-    <div className="printable-area relative rounded-2xl border border-slate-200 bg-white p-6 shadow">
+    <div
+      className="printable-area relative rounded-2xl border border-slate-200 bg-white p-6 shadow"
+      style={{ colorScheme: "light", backgroundColor: "#ffffff", color: "#0f172a" }}
+    >
       {logo && (
         <div
           className="pointer-events-none absolute inset-0 flex items-center justify-center"

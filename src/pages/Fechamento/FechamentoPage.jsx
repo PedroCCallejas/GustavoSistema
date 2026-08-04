@@ -144,6 +144,21 @@ export default function FechamentoPage() {
     documentTitle: `fechamento-${client.name || "cliente"}`,
   });
 
+  // No celular, o nome sugerido pro arquivo PDF vem do titulo da pagina (nao
+  // do titulo do iframe de impressao acima, que so funciona no desktop).
+  // Por isso mantemos o titulo da pagina sempre sincronizado com o cliente
+  // -- em vez de so trocar no instante de imprimir, que e tarde demais: o
+  // celular abre o menu de salvar/compartilhar de forma assincrona, e nesse
+  // meio tempo o titulo ja tinha voltado ao original.
+  useEffect(() => {
+    const nome = client.name?.trim();
+    document.title = nome ? `fechamento-${nome}` : "Fechamento Gustavo";
+
+    return () => {
+      document.title = "Fechamento Gustavo";
+    };
+  }, [client.name]);
+
   const money = (value) =>
     Number(value || 0).toLocaleString("pt-BR", {
       style: "currency",
@@ -314,13 +329,6 @@ export default function FechamentoPage() {
     salvandoPdfRef.current = true;
     setSalvandoPdf(true);
 
-    // No celular (Safari/Chrome iOS/Android), o nome sugerido do PDF vem do
-    // titulo da pagina, nao do titulo do iframe de impressao (que e o que o
-    // react-to-print usa e so funciona no desktop). Por isso trocamos o
-    // titulo da pagina temporariamente, so durante a impressao.
-    const tituloOriginal = document.title;
-    document.title = `fechamento-${client.name?.trim() || "cliente"}`;
-
     try {
       if (!financeiroRegistrado && totalGeral > 0) {
         try {
@@ -340,7 +348,6 @@ export default function FechamentoPage() {
 
       await onPrint?.();
     } finally {
-      document.title = tituloOriginal;
       salvandoPdfRef.current = false;
       setSalvandoPdf(false);
     }
@@ -495,6 +502,7 @@ export default function FechamentoPage() {
         <div
           ref={printRef}
           className="printable-area relative rounded-2xl border border-slate-200 bg-white p-6 shadow"
+          style={{ colorScheme: "light", backgroundColor: "#ffffff", color: "#0f172a" }}
         >
           {logo && (
             <div

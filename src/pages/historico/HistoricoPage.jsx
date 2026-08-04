@@ -28,6 +28,20 @@ export default function HistoricoPage() {
     documentTitle: `fechamento-${selecionado?.cliente_nome || "reimpressao"}`,
   });
 
+  // No celular, o nome sugerido pro arquivo PDF vem do titulo da pagina, nao
+  // do titulo do iframe de impressao acima (que so funciona no desktop).
+  // Mantemos sincronizado o tempo todo (nao so no instante de imprimir),
+  // porque o menu de salvar/compartilhar do celular abre de forma
+  // assincrona e um "trocar e already restaurar" chega tarde demais.
+  useEffect(() => {
+    const nome = selecionado?.cliente_nome?.trim();
+    document.title = nome ? `fechamento-${nome}` : "Fechamento Gustavo";
+
+    return () => {
+      document.title = "Fechamento Gustavo";
+    };
+  }, [selecionado]);
+
   const carregar = async (filtros) => {
     setCarregando(true);
     try {
@@ -58,19 +72,9 @@ export default function HistoricoPage() {
 
   const reimprimir = async (fechamento) => {
     setSelecionado(fechamento);
-
-    // No celular, o nome sugerido do PDF vem do titulo da pagina (nao do
-    // titulo do iframe de impressao, que so funciona no desktop). Por isso
-    // trocamos o titulo da pagina temporariamente, so durante a impressao
-    // (mesma correcao ja aplicada na tela de Fechamento).
-    const tituloOriginal = document.title;
-    document.title = `fechamento-${fechamento?.cliente_nome?.trim() || "reimpressao"}`;
-
-    // aguarda o proximo ciclo para o ImpressaoFechamento montar com os dados certos
-    setTimeout(async () => {
-      await imprimir?.();
-      document.title = tituloOriginal;
-    }, 50);
+    // aguarda o proximo ciclo para o ImpressaoFechamento montar com os dados
+    // certos e o titulo da pagina (useEffect acima) atualizar antes de imprimir
+    setTimeout(() => imprimir?.(), 50);
   };
 
   return (
