@@ -19,6 +19,22 @@ import PagamentoSection from "../../components/fechamento/PagamentoSection";
 
 import "./fechamento.print.css";
 
+// Rascunho do fechamento em andamento. Existe porque no celular, ao abrir o
+// menu de compartilhar/imprimir do PDF, o navegador pode recarregar a pagina
+// em segundo plano e apagar tudo que tinha sido preenchido. Com isso salvo,
+// ao voltar o formulario continua com os dados (cliente, itens, etc.), em vez
+// de aparecer em branco.
+const RASCUNHO_KEY = "rascunho_fechamento";
+
+function lerRascunho() {
+  try {
+    const raw = localStorage.getItem(RASCUNHO_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function FechamentoPage() {
   const printRef = useRef(null);
   const salvandoPdfRef = useRef(false);
@@ -53,18 +69,46 @@ export default function FechamentoPage() {
 
   const [config, setConfig] = useState(configPadrao);
   const [logo, setLogo] = useState(logoPadrao);
-  const [client, setClient] = useState(initialClient);
-  const [relatorio, setRelatorio] = useState("");
-  const [materials, setMaterials] = useState(initialMaterials);
-  const [services, setServices] = useState(initialServices);
-  const [descontoServico, setDescontoServico] = useState(initialDesconto);
+  const [client, setClient] = useState(() => lerRascunho()?.client ?? initialClient);
+  const [relatorio, setRelatorio] = useState(() => lerRascunho()?.relatorio ?? "");
+  const [materials, setMaterials] = useState(
+    () => lerRascunho()?.materials ?? initialMaterials
+  );
+  const [services, setServices] = useState(() => lerRascunho()?.services ?? initialServices);
+  const [descontoServico, setDescontoServico] = useState(
+    () => lerRascunho()?.descontoServico ?? initialDesconto
+  );
   const [payment, setPayment] = useState(montarPagamento(configPadrao));
-  const [financeiroRegistrado, setFinanceiroRegistrado] = useState(false);
+  const [financeiroRegistrado, setFinanceiroRegistrado] = useState(
+    () => lerRascunho()?.financeiroRegistrado ?? false
+  );
   const [salvandoPdf, setSalvandoPdf] = useState(false);
   const [produtos, setProdutos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [animais, setAnimais] = useState([]);
-  const [salvoOffline, setSalvoOffline] = useState(false);
+  const [salvoOffline, setSalvoOffline] = useState(() => lerRascunho()?.salvoOffline ?? false);
+
+  // Salva o progresso a cada alteracao, pra sobreviver a um recarregamento
+  // inesperado da pagina (ex: ao abrir o menu de imprimir/compartilhar no
+  // celular).
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        RASCUNHO_KEY,
+        JSON.stringify({
+          client,
+          relatorio,
+          materials,
+          services,
+          descontoServico,
+          financeiroRegistrado,
+          salvoOffline,
+        })
+      );
+    } catch {
+      // autosave e so uma conveniencia; se falhar, nao impede o uso
+    }
+  }, [client, relatorio, materials, services, descontoServico, financeiroRegistrado, salvoOffline]);
 
   useEffect(() => {
     (async () => {
@@ -324,6 +368,11 @@ export default function FechamentoPage() {
     setLogo(config.logo_url || logoPadrao);
     setFinanceiroRegistrado(false);
     setSalvoOffline(false);
+    try {
+      localStorage.removeItem(RASCUNHO_KEY);
+    } catch {
+      // ignora
+    }
   };
 
   const updateMat = (id, key, value) => {

@@ -277,7 +277,7 @@ export default function ClientesPage() {
 
               <form
                 onSubmit={(e) => adicionarAnimal(c.id, e)}
-                className="flex items-center gap-2"
+                className="flex flex-col gap-2 sm:flex-row sm:items-center"
               >
                 <input
                   type="text"
@@ -290,7 +290,7 @@ export default function ClientesPage() {
                 />
                 <button
                   type="submit"
-                  className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
+                  className="shrink-0 whitespace-nowrap rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
                 >
                   Adicionar animal
                 </button>
