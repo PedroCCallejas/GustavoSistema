@@ -126,9 +126,10 @@ export default function ItensTable({
 
       {isMateriais && (
         <p className="no-print mt-1 px-1 text-xs text-slate-400">
-          Dica: se o item tiver um produto do Estoque vinculado com unidade diferente de
-          &quot;un&quot; (ex: ml, kg, l), o campo Valor já é o total cobrado nessa linha — não
-          multiplica pela Qtd. A Qtd nesse caso serve só pra dar baixa certa no estoque.
+          Dica: ao escolher um produto do Estoque, o Valor já vem preenchido com o custo (Qtd ×
+          custo, ou só o custo por unidade se for &quot;un&quot;) — pode aumentar à vontade pra
+          ganhar em cima. Pra itens de ml/kg/l, o Valor é o total da linha (não multiplica pela
+          Qtd depois de editado).
         </p>
       )}
     </div>

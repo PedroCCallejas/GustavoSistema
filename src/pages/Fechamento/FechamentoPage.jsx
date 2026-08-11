@@ -68,7 +68,7 @@ export default function FechamentoPage() {
     date: new Date().toLocaleDateString("pt-BR"),
   };
 
-  const initialMaterials = [{ id: 1, desc: "", qtd: 1, price: 0 }];
+  const initialMaterials = [{ id: 1, desc: "", qtd: 1, price: 0, precoAuto: true }];
 
   const initialServices = [{ id: 1, desc: "", date: "", km: "", price: 0 }];
 
@@ -387,7 +387,7 @@ export default function FechamentoPage() {
       date: new Date().toLocaleDateString("pt-BR"),
     });
     setRelatorio("");
-    setMaterials([{ id: 1, desc: "", qtd: 1, price: 0 }]);
+    setMaterials([{ id: 1, desc: "", qtd: 1, price: 0, precoAuto: true }]);
     setServices([{ id: 1, desc: "", date: "", km: "", price: 0 }]);
     setDescontoServico(initialDesconto);
     setPayment(montarPagamento(config));
@@ -405,17 +405,53 @@ export default function FechamentoPage() {
     setMaterials((prev) =>
       prev.map((item) => {
         if (item.id !== id) return item;
+
+        // Ao escolher um produto do Estoque, ja sugere o Valor com base no
+        // custo (qtd x custo pra ml/kg/l, ou so o custo por unidade pra
+        // "un"). O Gustavo pode aumentar depois pra ganhar em cima.
         if (key === "produtoId") {
           const prod = produtos.find((p) => String(p.id) === String(value));
-          return { ...item, produtoId: value, desc: prod ? prod.nome : item.desc };
+          const atualizado = { ...item, produtoId: value, desc: prod ? prod.nome : item.desc };
+
+          if (prod && item.precoAuto !== false) {
+            const custo = Number(prod.custo_medio) || 0;
+            const qtd = Number(item.qtd) || 0;
+            atualizado.price = ehUnidadeContavel(prod.unidade) ? custo : qtd * custo;
+          }
+
+          return atualizado;
         }
+
+        // Se o item e por ml/kg/l, o Valor sugerido acompanha a Qtd digitada
+        // (enquanto o Gustavo nao tiver editado o Valor na mao).
+        if (key === "qtd") {
+          const atualizado = { ...item, qtd: value };
+          const prod = produtos.find((p) => String(p.id) === String(item.produtoId));
+
+          if (prod && item.precoAuto !== false && !ehUnidadeContavel(prod.unidade)) {
+            const custo = Number(prod.custo_medio) || 0;
+            atualizado.price = (Number(value) || 0) * custo;
+          }
+
+          return atualizado;
+        }
+
+        // Assim que ele mexe no Valor na mao, para de preencher sozinho
+        // nesse item.
+        if (key === "price") {
+          return { ...item, price: value, precoAuto: false };
+        }
+
         return { ...item, [key]: value };
       })
     );
   };
 
   const addMat = () => {
-    setMaterials((prev) => [...prev, { id: Date.now(), desc: "", qtd: 1, price: 0 }]);
+    setMaterials((prev) => [
+      ...prev,
+      { id: Date.now(), desc: "", qtd: 1, price: 0, precoAuto: true },
+    ]);
   };
 
   const delMat = (id) => {
