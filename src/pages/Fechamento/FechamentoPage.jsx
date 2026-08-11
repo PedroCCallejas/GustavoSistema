@@ -35,6 +35,28 @@ function lerRascunho() {
   }
 }
 
+// Produtos "un" sao contaveis (3 seringas, 2 ferraduras...) -- nesses casos
+// Valor continua sendo o preco de cada um, multiplicado pela Qtd. Ja em
+// produtos por volume/peso (ml, kg, l...) nao faz sentido "preco por ml":
+// o Gustavo digita quanto usou (Qtd, em ml) so pra controlar o estoque, e
+// quanto vai cobrar (Valor) direto, sem multiplicar.
+function ehUnidadeContavel(unidade) {
+  const u = (unidade || "un").trim().toLowerCase();
+  return u === "un" || u === "";
+}
+
+function calcularTotalMaterial(item, produtos) {
+  const price = Number(item.price) || 0;
+  const produto = produtos.find((p) => String(p.id) === String(item.produtoId));
+
+  if (item.produtoId && produto && !ehUnidadeContavel(produto.unidade)) {
+    return price;
+  }
+
+  const qtd = Number(item.qtd) || 0;
+  return qtd * price;
+}
+
 export default function FechamentoPage() {
   const printRef = useRef(null);
   const salvandoPdfRef = useRef(false);
@@ -166,12 +188,8 @@ export default function FechamentoPage() {
     });
 
   const totalMat = useMemo(() => {
-    return materials.reduce((acc, item) => {
-      const qtd = Number(item.qtd) || 0;
-      const price = Number(item.price) || 0;
-      return acc + qtd * price;
-    }, 0);
-  }, [materials]);
+    return materials.reduce((acc, item) => acc + calcularTotalMaterial(item, produtos), 0);
+  }, [materials, produtos]);
 
   const totalSrv = useMemo(() => {
     return services.reduce((acc, item) => {
@@ -305,6 +323,7 @@ export default function FechamentoPage() {
         desc: m.desc,
         qtd: m.qtd,
         price: m.price,
+        total: calcularTotalMaterial(m, produtos),
       })),
       servicos: services.map((s) => ({ desc: s.desc, date: s.date, km: s.km, price: s.price })),
       pagamento: {

@@ -6,6 +6,15 @@ import { gerarPixCopiaECola } from "../../utils/pix/pixPayload";
 const money = (v) =>
   Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+// Fechamentos novos ja salvam o total certo de cada material (calculado na
+// hora, considerando se o item e por unidade ou por ml/kg/l). Fechamentos
+// antigos nao tinham isso salvo -- pra esses, cai no calculo de sempre
+// (qtd x preco), que era a unica regra que existia na epoca.
+function totalDoMaterial(m) {
+  if (m.total !== undefined && m.total !== null) return Number(m.total) || 0;
+  return (Number(m.qtd) || 0) * (Number(m.price) || 0);
+}
+
 const formasPagamento = {
   pix: "PIX",
   dinheiro: "Dinheiro",
@@ -20,10 +29,7 @@ export default function ImpressaoFechamento({ config, fechamento, logo }) {
   const servicos = fechamento.servicos || [];
   const pagamento = fechamento.pagamento || {};
   const descontoServico = pagamento.descontoServico;
-  const subtotalMateriais = materiais.reduce(
-    (acc, m) => acc + (Number(m.qtd) || 0) * (Number(m.price) || 0),
-    0
-  );
+  const subtotalMateriais = materiais.reduce((acc, m) => acc + totalDoMaterial(m), 0);
   const subtotalServicos = servicos.reduce((acc, s) => acc + (Number(s.price) || 0), 0);
   const totalComDescontoServicos =
     subtotalServicos - (Number(descontoServico?.valorAbatido) || 0);
@@ -119,7 +125,7 @@ export default function ImpressaoFechamento({ config, fechamento, logo }) {
                 <tr className="border-b text-left text-xs uppercase text-slate-500">
                   <th className="py-1 pr-2">Descrição</th>
                   <th className="py-1 pr-2 text-center">Qtd</th>
-                  <th className="py-1 pr-2 text-right">Valor unit.</th>
+                  <th className="py-1 pr-2 text-right">Valor</th>
                   <th className="py-1 pr-2 text-right">Total</th>
                 </tr>
               </thead>
@@ -130,7 +136,7 @@ export default function ImpressaoFechamento({ config, fechamento, logo }) {
                     <td className="py-1 pr-2 text-center">{m.qtd}</td>
                     <td className="py-1 pr-2 text-right font-mono">{money(m.price)}</td>
                     <td className="py-1 pr-2 text-right font-mono">
-                      {money((Number(m.qtd) || 0) * (Number(m.price) || 0))}
+                      {money(totalDoMaterial(m))}
                     </td>
                   </tr>
                 ))}

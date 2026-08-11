@@ -56,7 +56,7 @@ export default function ItensTable({
           printHidden: true,
           options: produtos.map((p) => ({
             value: String(p.id),
-            label: p.nome,
+            label: `${p.nome} (${p.unidade || "un"})`,
           })),
           headerClassName: "pb-3 text-center min-w-[120px] font-medium",
           cellClassName: "py-2 align-top text-center",
@@ -111,16 +111,26 @@ export default function ItensTable({
     ) : undefined;
 
   return (
-    <EditableTable
-      title={title}
-      addLabel={addLabel}
-      rows={rows}
-      onAdd={onAdd}
-      onRemove={onRemove}
-      onUpdate={onUpdate}
-      columns={columns}
-      subtotalValue={subtotalValue}
-      footer={footer}
-    />
+    <div>
+      <EditableTable
+        title={title}
+        addLabel={addLabel}
+        rows={rows}
+        onAdd={onAdd}
+        onRemove={onRemove}
+        onUpdate={onUpdate}
+        columns={columns}
+        subtotalValue={subtotalValue}
+        footer={footer}
+      />
+
+      {isMateriais && (
+        <p className="no-print mt-1 px-1 text-xs text-slate-400">
+          Dica: se o item tiver um produto do Estoque vinculado com unidade diferente de
+          &quot;un&quot; (ex: ml, kg, l), o campo Valor já é o total cobrado nessa linha — não
+          multiplica pela Qtd. A Qtd nesse caso serve só pra dar baixa certa no estoque.
+        </p>
+      )}
+    </div>
   );
 }
