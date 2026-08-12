@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useReactToPrint } from "react-to-print";
 import { FiPrinter, FiSearch } from "react-icons/fi";
 import { listarFechamentos } from "../../services/fechamentos";
 import { obterConfiguracoes, configPadrao } from "../../services/configuracoes";
@@ -22,17 +21,15 @@ export default function HistoricoPage() {
   const [erro, setErro] = useState("");
   const [selecionado, setSelecionado] = useState(null);
 
-  const printRef = useRef(null);
-  const imprimir = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `fechamento-${selecionado?.cliente_nome || "reimpressao"}`,
-  });
+  // Imprime a propria pagina direto (nao um iframe clonado -- no celular,
+  // esse metodo antigo as vezes nao copiava o CSS certo, e o PDF saia com
+  // os campos duplicados e os controles editaveis aparecendo).
+  const imprimir = () => window.print();
 
-  // No celular, o nome sugerido pro arquivo PDF vem do titulo da pagina, nao
-  // do titulo do iframe de impressao acima (que so funciona no desktop).
+  // No celular, o nome sugerido pro arquivo PDF vem do titulo da pagina.
   // Mantemos sincronizado o tempo todo (nao so no instante de imprimir),
   // porque o menu de salvar/compartilhar do celular abre de forma
-  // assincrona e um "trocar e already restaurar" chega tarde demais.
+  // assincrona e um "trocar e ja restaurar" chega tarde demais.
   useEffect(() => {
     const nome = selecionado?.cliente_nome?.trim();
     document.title = nome ? `fechamento-${nome}` : "Fechamento Gustavo";
@@ -147,7 +144,7 @@ export default function HistoricoPage() {
       )}
 
       {/* Area de impressao, escondida na tela normal e visivel so ao imprimir */}
-      <div className="hidden print:block" ref={printRef}>
+      <div className="only-print">
         {selecionado && (
           <ImpressaoFechamento
             config={config}

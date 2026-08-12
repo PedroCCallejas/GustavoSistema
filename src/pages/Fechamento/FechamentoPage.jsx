@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useReactToPrint } from "react-to-print";
 import { FiUpload, FiPrinter, FiMessageCircle } from "react-icons/fi";
 
 import logoPadrao from "../../assets/LogoGustavo.png";
@@ -58,7 +57,6 @@ function calcularTotalMaterial(item, produtos) {
 }
 
 export default function FechamentoPage() {
-  const printRef = useRef(null);
   const salvandoPdfRef = useRef(false);
 
   const initialClient = {
@@ -161,13 +159,16 @@ export default function FechamentoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onPrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `fechamento-${client.name || "cliente"}`,
-  });
+  // Imprime a propria pagina (nao um iframe escondido clonado). No celular,
+  // o metodo antigo (react-to-print, que clona o conteudo pra um iframe)
+  // as vezes nao copiava o CSS direito, e o PDF saia com os campos
+  // duplicados e os controles editaveis aparecendo. Imprimindo a pagina
+  // real, o CSS que ja esta carregado e aplicado certo sempre funciona; o
+  // "@media print" em fechamento.print.css cuida de mostrar so a area
+  // certa (.printable-area) e esconder o resto.
+  const onPrint = () => window.print();
 
-  // No celular, o nome sugerido pro arquivo PDF vem do titulo da pagina (nao
-  // do titulo do iframe de impressao acima, que so funciona no desktop).
+  // No celular, o nome sugerido pro arquivo PDF vem do titulo da pagina.
   // Por isso mantemos o titulo da pagina sempre sincronizado com o cliente
   // -- em vez de so trocar no instante de imprimir, que e tarde demais: o
   // celular abre o menu de salvar/compartilhar de forma assincrona, e nesse
@@ -555,7 +556,6 @@ export default function FechamentoPage() {
           </div>
         )}
         <div
-          ref={printRef}
           className="printable-area relative rounded-2xl border border-slate-200 bg-white p-6 shadow"
           style={{ colorScheme: "light", backgroundColor: "#ffffff", color: "#0f172a" }}
         >
