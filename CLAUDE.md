@@ -45,6 +45,11 @@ npm run build   # vite build
 
 Não há `typecheck`, testes nem CI.
 
+**Baseline em 2026-09-13:** `npm run lint` já falha na `main` (erros
+pré-existentes em `src/` e `vite.config.js`) e, quando existe build local do
+Tauri, também varre `src-tauri/target/`. Compare com a baseline antes de
+atribuir um erro de lint à sua mudança.
+
 ## Operações que exigem pedido explícito
 
 | Operação | Por quê |
