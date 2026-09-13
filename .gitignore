@@ -12,6 +12,26 @@ dist
 dist-ssr
 *.local
 
+# Variáveis de ambiente e segredos
+.env
+.env.*
+!.env.example
+
+# Claude Code — .claude/skills é versionado; configuração local, cache e
+# histórico não.
+.claude/settings.local.json
+.claude/settings.local.*.json
+.claude/memory/
+.claude/logs/
+.claude/cache/
+.claude/tmp/
+.claude/history/
+.claude/projects/
+
+# Codex/Antigravity não são usados aqui; evita versionar config local por acidente.
+.codex/
+.agents/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
